@@ -1,0 +1,129 @@
+// Prisma schema for the salon booking app.
+// This schema defines the core domain entities: categories, services,
+// service phases, professionals, resources and bookings. Each service
+// can consist of multiple phases with different durations and flags
+// indicating whether they require exclusive attention. The booking logic
+// in the application reads these definitions to determine availability.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Categories group services into logical sections like hair, nails, etc.
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  services    Service[]
+}
+
+// A service represents a treatment offered by the salon. Each service
+// belongs to a category and may have multiple phases that describe
+// when a professional must be actively involved versus when the client
+// waits (e.g., during colour processing).
+model Service {
+  id                Int            @id @default(autoincrement())
+  name              String
+  description       String?
+  price             Float
+  priceLabel        String?
+  totalDuration     Int            // Total duration in minutes
+  preparationTime   Int?           // Optional prep/cleanup time in minutes
+  exclusive         Boolean        // Whether the entire service blocks the professional
+  categoryId        Int
+  category          Category       @relation(fields: [categoryId], references: [id])
+  phases            ServicePhase[]
+  bookings          Booking[]
+}
+
+// Each service can be broken down into phases. A phase with
+// `exclusive` set to true blocks the professional for its duration,
+// whereas a phase with `exclusive` false only blocks a resource (e.g. a chair)
+// but allows the professional to attend another client.
+model ServicePhase {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int
+  order       Int      // Order of the phase in the service
+  name        String
+  duration    Int      // Duration in minutes
+  exclusive   Boolean  // Whether this phase requires exclusive attention
+  service     Service  @relation(fields: [serviceId], references: [id])
+}
+
+// Professionals who perform the services. They may have specialisations.
+model Professional {
+  id            Int       @id @default(autoincrement())
+  name          String
+  bio           String?
+  specialties   String[]  @default([]) // Array of category or service slugs
+  bookings      Booking[]
+}
+
+// Resources represent physical assets like chairs, basins or rooms. Some
+// services may require a specific resource for all phases; others share.
+model Resource {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  bookings    Booking[]
+}
+
+// A booking created by a client. It references the selected service,
+// professional (optional) and resource. The booking also stores start
+// and end times. BookingBlocks are generated to reflect each phase's
+// occupancy and are used to check availability.
+model Booking {
+  id            Int              @id @default(autoincrement())
+  clientName    String
+  clientEmail   String
+  clientPhone   String?
+  notes         String?
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+  serviceId     Int
+  service       Service          @relation(fields: [serviceId], references: [id])
+  professionalId Int?
+  professional  Professional?     @relation(fields: [professionalId], references: [id])
+  resourceId    Int?
+  resource      Resource?         @relation(fields: [resourceId], references: [id])
+  status        String            @default("confirmed")
+  blocks        BookingBlock[]
+}
+
+// Internal blocks representing each phase's occupancy for a booking. These
+// records let the scheduler precisely avoid overlapping exclusive phases
+// while allowing overlaps during waiting periods.
+model BookingBlock {
+  id        Int      @id @default(autoincrement())
+  bookingId Int
+  start     DateTime
+  end       DateTime
+  exclusive Boolean
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+}
+
+model Customer {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  phone        String?
+  notes        String?
+  colorFormula String?
+  allergies    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
