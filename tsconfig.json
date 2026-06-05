@@ -18,10 +18,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": [
-      "node",
-      "jest"
-    ],
+    "types": ["node"],
     "paths": {
       "@/components/*": [
         "src/components/*"
