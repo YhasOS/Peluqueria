@@ -87,6 +87,26 @@ export default function Home() {
         </div>
       </section>
 
+
+
+      <section className="mt-14 grid gap-6 md:grid-cols-3">
+        <div className="rounded-[2rem] bg-white/90 p-7 shadow-soft">
+          <p className="text-3xl">✂️</p>
+          <h3 className="mt-4 font-serif text-2xl text-accent-dark">Color, mechas y corte</h3>
+          <p className="mt-3 leading-7 text-gray-600">Diagnóstico previo, asesoramiento personalizado y trabajos adaptados a cada cabello.</p>
+        </div>
+        <div className="rounded-[2rem] bg-white/90 p-7 shadow-soft">
+          <p className="text-3xl">♡</p>
+          <h3 className="mt-4 font-serif text-2xl text-accent-dark">Estética y mirada</h3>
+          <p className="mt-3 leading-7 text-gray-600">Cejas, pestañas, faciales y depilación para cuidar cada detalle de tu imagen.</p>
+        </div>
+        <div className="rounded-[2rem] bg-white/90 p-7 shadow-soft">
+          <p className="text-3xl">🌿</p>
+          <h3 className="mt-4 font-serif text-2xl text-accent-dark">Tratamientos capilares</h3>
+          <p className="mt-3 leading-7 text-gray-600">Hidratación, nutrición y recuperación para devolver vida, brillo y suavidad al cabello.</p>
+        </div>
+      </section>
+
       <section className="mt-14 rounded-[2rem] bg-primary-light p-8 shadow-soft md:p-12">
         <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
           <div>
@@ -94,6 +114,30 @@ export default function Home() {
             <p className="mt-3 text-gray-700">Tu tiempo es importante. Elige servicio, fecha y hora disponible y confirma tu reserva online.</p>
           </div>
           <Link href="/services" className="rounded-full bg-accent px-8 py-4 text-center font-bold text-white shadow-soft hover:bg-accent-dark">Reservar ahora</Link>
+        </div>
+      </section>
+
+
+
+      <section className="mt-14 overflow-hidden rounded-[2rem] bg-white/90 shadow-soft">
+        <div className="grid gap-0 md:grid-cols-[0.75fr_1.25fr]">
+          <div className="bg-accent p-8 text-white md:p-10">
+            <p className="font-script text-5xl">Horario</p>
+            <h2 className="mt-2 font-serif text-3xl">Te esperamos</h2>
+            <div className="mt-6 space-y-3 text-lg">
+              <p><strong>Lunes a viernes:</strong> 9:30 - 19:00</p>
+              <p><strong>Sábado:</strong> 9:00 - 14:00</p>
+              <p><strong>Domingo:</strong> cerrado</p>
+            </div>
+          </div>
+          <div className="p-8 md:p-10">
+            <p className="font-script text-5xl text-accent">Reserva fácil</p>
+            <p className="mt-4 leading-8 text-gray-700">Puedes reservar online seleccionando el servicio, la fecha y la hora disponible. Si tienes dudas sobre el precio o el trabajo que necesitas, escríbenos por WhatsApp y te asesoramos antes de confirmar.</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a href="https://wa.me/34647067368?text=Hola%20Gema%2C%20tengo%20una%20consulta%20sobre%20una%20cita." target="_blank" rel="noreferrer" className="rounded-full bg-[#25D366] px-6 py-3 font-bold text-white shadow-soft">Consultar por WhatsApp</a>
+              <Link href="/services" className="rounded-full border border-accent px-6 py-3 font-bold text-accent">Reservar online</Link>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -6,6 +6,7 @@ const salonName = 'Gema Estudio de Belleza';
 const phone = '647 067 368';
 const email = 'gemasalonbelleza@gmail.com';
 const address = 'Calle Velero, 29750 Mezquitilla (Algarrobo Costa), Málaga';
+const whatsappUrl = 'https://wa.me/34647067368?text=Hola%20Gema%2C%20me%20gustar%C3%ADa%20pedir%20informaci%C3%B3n%20o%20reservar%20una%20cita.';
 
 type Props = {
   title?: string;
@@ -19,6 +20,9 @@ export default function Layout({ title, children }: Props) {
         <title>{title ? `${title} | ${salonName}` : salonName}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="description" content="Gema Estudio de Belleza en Mezquitilla, Algarrobo Costa. Peluquería, color, mechas, estética, manicura, pedicura y tratamientos capilares con reserva online." />
+        <meta property="og:title" content="Gema Estudio de Belleza" />
+        <meta property="og:description" content="Especialistas en color y cuidado del cabello en Mezquitilla, Algarrobo Costa." />
+        <meta property="og:image" content="/images/gema-fachada.jpg" />
       </Head>
 
       <div className="hidden border-b border-white/70 bg-rosebar text-sm text-white md:block">
@@ -28,7 +32,7 @@ export default function Layout({ title, children }: Props) {
             <a href={`mailto:${email}`} className="hover:underline">✉ {email}</a>
             <span>📍 {address}</span>
           </div>
-          <a href="https://wa.me/34647067368" target="_blank" rel="noreferrer" className="font-semibold hover:underline">WhatsApp</a>
+          <a href={whatsappUrl} target="_blank" rel="noreferrer" className="font-semibold hover:underline">WhatsApp</a>
         </div>
       </div>
 
@@ -52,6 +56,16 @@ export default function Layout({ title, children }: Props) {
         {children}
       </main>
 
+      <a
+        href={whatsappUrl}
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:scale-105"
+        aria-label="Contactar por WhatsApp"
+      >
+        <span className="text-lg">☘</span> WhatsApp
+      </a>
+
       <footer className="mt-12 border-t border-white/70 bg-white/80 py-8 text-sm text-gray-700">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 md:grid-cols-[1.2fr_1fr_1fr]">
           <div>
@@ -72,7 +86,7 @@ export default function Layout({ title, children }: Props) {
           </div>
         </div>
         <div className="mx-auto mt-8 max-w-7xl border-t border-primary px-4 pt-5 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} {salonName}. Todos los derechos reservados.
+          © {new Date().getFullYear()} {salonName}. Todos los derechos reservados. · Aviso legal · Política de privacidad
         </div>
       </footer>
     </div>
