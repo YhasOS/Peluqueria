@@ -7,6 +7,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (String(password || '') !== getAdminPassword()) {
     return res.status(401).json({ error: 'Contraseña incorrecta' });
   }
-  res.setHeader('Set-Cookie', `${ADMIN_COOKIE}=${getAdminPassword()}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`);
+  res.setHeader('Set-Cookie', `${ADMIN_COOKIE}=${getAdminPassword()}; Path=/; SameSite=Lax; Max-Age=604800`);
   return res.status(200).json({ ok: true });
 }
