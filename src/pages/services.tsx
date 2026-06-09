@@ -31,16 +31,19 @@ export default function Services() {
 
   return (
     <Layout title="Servicios">
-      <section className="mb-8 overflow-hidden rounded-[2.2rem] bg-white/85 shadow-soft">
-        <div className="grid items-center gap-6 md:grid-cols-[1fr_0.5fr]">
+      <section className="mb-8 overflow-hidden rounded-[2.4rem] border border-white/80 bg-white/90 shadow-soft">
+        <div className="grid items-center gap-0 md:grid-cols-[1fr_0.58fr]">
           <div className="p-8 md:p-12">
             <p className="font-script text-5xl text-accent">Carta de servicios</p>
-            <h1 className="mt-2 font-serif text-4xl text-accent-dark md:text-5xl">Encuentra el servicio perfecto para ti</h1>
+            <h1 className="mt-2 font-serif text-4xl text-accent-dark md:text-5xl">Gema Estudio de Belleza</h1>
             <p className="mt-4 max-w-3xl text-gray-600">
-              Los precios con rango se mantienen porque pueden variar según longitud, cantidad de producto, técnica y diagnóstico profesional.
+              Precios orientativos. Los servicios con rango pueden variar según longitud, cantidad de producto, técnica y diagnóstico profesional.
             </p>
+            <div className="mt-6 rounded-2xl bg-primary-light p-5 text-sm leading-7 text-gray-700">
+              <strong>Servicios especiales:</strong> transición a canas y cambio de look bajo consulta. Para servicios de color y mechas recomendamos asesoramiento previo.
+            </div>
           </div>
-          <img src="/images/gema-tarifa-completa.jpg" alt="Carta de precios Gema" className="h-64 w-full object-cover object-top md:h-full" />
+          <img src="/images/gema-tarifa-final.jpg" alt="Carta de precios Gema" className="h-80 w-full object-cover object-top md:h-[420px]" />
         </div>
       </section>
 
@@ -59,6 +62,7 @@ export default function Services() {
               </button>
             ))}
           </div>
+          <div className="mb-6 text-sm text-gray-600">Mostrando {filtered.length} servicios. Pulsa “Reservar” para elegir fecha y hora.</div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {filtered.map((service) => <ServiceCard key={service.id} service={service} />)}
           </div>

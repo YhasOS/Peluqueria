@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-label="Logo GE Gema Estudio de Belleza">
+  <defs>
+    <linearGradient id="roseGold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#d9aa8d"/>
+      <stop offset="0.45" stop-color="#9b6a4f"/>
+      <stop offset="1" stop-color="#5f3c2b"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="900" rx="80" fill="#fffaf6"/>
+  <circle cx="450" cy="410" r="285" fill="none" stroke="url(#roseGold)" stroke-width="16" stroke-linecap="round" stroke-dasharray="1420 260" transform="rotate(-18 450 410)"/>
+  <text x="315" y="485" font-family="Georgia, 'Times New Roman', serif" font-size="250" fill="url(#roseGold)">G</text>
+  <text x="440" y="515" font-family="Georgia, 'Times New Roman', serif" font-size="210" fill="url(#roseGold)">E</text>
+  <path d="M610 480c60-44 93-98 103-164 36 70 27 132-24 184 58-5 105-30 145-73-19 72-65 120-139 145 44 19 88 21 132 8-54 47-113 61-178 42-8 66-43 112-105 139 30-49 41-96 32-143-34 42-78 69-133 80 42-35 70-75 84-121-44 14-89 14-134-2 65-11 118-43 217-95z" fill="url(#roseGold)" opacity="0.82"/>
+  <text x="450" y="770" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="72" letter-spacing="18" fill="#5f3c2b">GEMA</text>
+  <text x="450" y="830" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" letter-spacing="12" fill="#5f3c2b">ESTUDIO DE BELLEZA</text>
+</svg>
