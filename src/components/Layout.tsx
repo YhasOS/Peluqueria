@@ -1,17 +1,14 @@
 import Head from 'next/head';
 import Link from 'next/link';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 const salonName = 'Gema Estudio de Belleza';
 const phone = '647 067 368';
-const email = 'gemasalonbelleza@gmail.com';
+const email = 'info@gemaestudiodebelleza.es';
 const address = 'Calle Velero, 29750 Mezquitilla (Algarrobo Costa), Málaga';
 const whatsappUrl = 'https://wa.me/34647067368?text=Hola%20Gema%2C%20me%20gustar%C3%ADa%20pedir%20informaci%C3%B3n%20o%20reservar%20una%20cita.';
 
-type Props = {
-  title?: string;
-  children: ReactNode;
-};
+type Props = { title?: string; children: ReactNode };
 
 function Monogram({ small = false }: { small?: boolean }) {
   return (
@@ -24,12 +21,39 @@ function Monogram({ small = false }: { small?: boolean }) {
 }
 
 export default function Layout({ title, children }: Props) {
+  const [canInstall, setCanInstall] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => null);
+    const handler = (event: any) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+      setCanInstall(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  async function installApp() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    setCanInstall(false);
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,#fffdf9_0,#f7eee8_38%,#ead7cd_100%)] text-text font-sans">
       <Head>
         <title>{title ? `${title} | ${salonName}` : salonName}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Gema Estudio de Belleza en Mezquitilla, Algarrobo Costa. Especialistas en color, cuidado del cabello, peluquería, estética, manicura, pedicura y reserva online." />
+        <meta name="description" content="Gema Estudio de Belleza en Mezquitilla, Algarrobo Costa. Especialistas en color, cuidado del cabello, peluquería, estética y reserva online." />
+        <meta name="theme-color" content="#c9a992" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="Gema Belleza" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta property="og:title" content="Gema Estudio de Belleza" />
         <meta property="og:description" content="Especialistas en color y cuidado del cabello en Mezquitilla, Algarrobo Costa." />
         <meta property="og:image" content="/images/gema-fachada.jpg" />
@@ -58,24 +82,22 @@ export default function Layout({ title, children }: Props) {
           <nav className="flex items-center gap-1 text-sm font-semibold text-gray-700 sm:gap-3 sm:text-base">
             <Link href="/" className="rounded-full px-3 py-2 hover:bg-primary-light hover:text-accent">Inicio</Link>
             <Link href="/services" className="rounded-full px-3 py-2 hover:bg-primary-light hover:text-accent">Servicios</Link>
-            <Link href="/#sobre" className="hidden rounded-full px-3 py-2 hover:bg-primary-light hover:text-accent md:inline-flex">Sobre</Link>
+            <Link href="/mi-cuenta" className="rounded-full px-3 py-2 hover:bg-primary-light hover:text-accent">Mi cuenta</Link>
             <Link href="/#contacto" className="hidden rounded-full px-3 py-2 hover:bg-primary-light hover:text-accent md:inline-flex">Contacto</Link>
             <Link href="/services" className="rounded-full bg-accent px-4 py-2 text-white shadow-soft hover:bg-accent-dark">Reservar</Link>
           </nav>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {children}
-      </main>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
 
-      <a
-        href={whatsappUrl}
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:scale-105"
-        aria-label="Contactar por WhatsApp"
-      >
+      {canInstall && (
+        <button onClick={installApp} className="fixed bottom-20 right-5 z-40 rounded-full bg-accent-dark px-5 py-3 text-sm font-extrabold text-white shadow-2xl hover:scale-105">
+          Instalar app
+        </button>
+      )}
+
+      <a href={whatsappUrl} target="_blank" rel="noreferrer" className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-extrabold text-white shadow-2xl transition hover:scale-105" aria-label="Contactar por WhatsApp">
         <span className="text-lg">☘</span> WhatsApp
       </a>
 
@@ -87,19 +109,15 @@ export default function Layout({ title, children }: Props) {
           </div>
           <div>
             <p className="font-bold text-accent-dark">Contacto</p>
-            <p className="mt-3">{phone}</p>
-            <p>{email}</p>
-            <p>{address}</p>
+            <p className="mt-3">{phone}</p><p>{email}</p><p>{address}</p>
           </div>
           <div>
-            <p className="font-bold text-accent-dark">Reserva online</p>
-            <p className="mt-3">Elige servicio, fecha y hora disponible desde cualquier dispositivo.</p>
-            <Link href="/services" className="mt-4 inline-flex rounded-full bg-accent px-5 py-2 font-bold text-white">Reservar cita</Link>
+            <p className="font-bold text-accent-dark">App de clientas</p>
+            <p className="mt-3">Instala la web como aplicación y consulta tus próximas citas, historial y tratamientos.</p>
+            <Link href="/mi-cuenta" className="mt-4 inline-flex rounded-full bg-accent px-5 py-2 font-bold text-white">Mi cuenta</Link>
           </div>
         </div>
-        <div className="mx-auto mt-8 max-w-7xl border-t border-primary px-4 pt-5 text-center text-xs text-gray-500">
-          © {new Date().getFullYear()} {salonName}. Todos los derechos reservados. · Aviso legal · Política de privacidad
-        </div>
+        <div className="mx-auto mt-8 max-w-7xl border-t border-primary px-4 pt-5 text-center text-xs text-gray-500">© {new Date().getFullYear()} {salonName}. Todos los derechos reservados. · Aviso legal · Política de privacidad</div>
       </footer>
     </div>
   );

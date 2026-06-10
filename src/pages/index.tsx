@@ -117,13 +117,44 @@ export default function Home() {
         </div>
       </section>
 
+
+      <section className="mt-14 overflow-hidden rounded-[2.2rem] border border-white/80 bg-white/90 shadow-soft">
+        <div className="grid items-center md:grid-cols-[0.95fr_1.05fr]">
+          <div className="p-8 md:p-12">
+            <p className="font-script text-5xl text-accent">Tu app de belleza</p>
+            <h2 className="mt-1 font-serif text-4xl text-accent-dark">Instala Gema en tu móvil</h2>
+            <p className="mt-5 leading-8 text-gray-700">Desde la web podrás instalar la aplicación en tu móvil para reservar más rápido, consultar tus próximas citas, revisar servicios realizados y mantener tu historial de tratamientos.</p>
+            <div className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-2xl bg-primary-light p-4"><strong>Reservas guardadas</strong><br />Consulta fecha, hora, servicio y profesional.</div>
+              <div className="rounded-2xl bg-primary-light p-4"><strong>Historial</strong><br />Revisa citas pasadas, notas y tratamientos.</div>
+              <div className="rounded-2xl bg-primary-light p-4"><strong>Acceso rápido</strong><br />Instálala como app desde Chrome o Safari.</div>
+              <div className="rounded-2xl bg-primary-light p-4"><strong>Nueva cita</strong><br />Reserva otra vez en pocos toques.</div>
+            </div>
+            <Link href="/mi-cuenta" className="mt-8 inline-flex rounded-full bg-accent px-7 py-3 font-bold text-white shadow-soft hover:bg-accent-dark">Abrir mi cuenta</Link>
+          </div>
+          <div className="bg-primary-light p-8 md:p-12">
+            <div className="mx-auto max-w-sm rounded-[2rem] border border-accent/20 bg-white p-5 shadow-2xl">
+              <div className="rounded-[1.5rem] bg-[radial-gradient(circle_at_top,#fffdf9,#ead7cd)] p-6">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-accent/40 bg-white font-serif text-4xl text-accent-dark">GE</div>
+                <h3 className="mt-5 text-center font-serif text-2xl text-accent-dark">Gema Belleza</h3>
+                <p className="mt-2 text-center text-sm text-gray-600">Tus citas, tratamientos y reservas siempre a mano.</p>
+                <div className="mt-6 space-y-3">
+                  <div className="rounded-2xl bg-white/80 p-4 text-sm"><strong>Próxima cita</strong><br />Color raíz + peinado · 10:30</div>
+                  <div className="rounded-2xl bg-white/80 p-4 text-sm"><strong>Último servicio</strong><br />Tratamiento plex reconstrucción</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="contacto" className="mt-14 grid gap-6 md:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[2rem] bg-white/90 p-8 shadow-soft">
           <p className="font-script text-5xl text-accent">Contacto</p>
           <h2 className="font-serif text-3xl text-accent-dark">Estamos en Mezquitilla</h2>
           <div className="mt-6 space-y-4 text-gray-700">
             <p><strong>Teléfono / WhatsApp:</strong><br /><a className="text-accent font-bold" href="https://wa.me/34647067368" target="_blank" rel="noreferrer">647 067 368</a></p>
-            <p><strong>Email:</strong><br /><a className="text-accent font-bold" href="mailto:gemasalonbelleza@gmail.com">gemasalonbelleza@gmail.com</a></p>
+            <p><strong>Email:</strong><br /><a className="text-accent font-bold" href="mailto:info@gemaestudiodebelleza.es">info@gemaestudiodebelleza.es</a></p>
             <p><strong>Dirección:</strong><br />Calle Velero, 29750 Mezquitilla<br />Algarrobo Costa, Málaga</p>
             <p><strong>Instagram:</strong><br />@gema.estudiobelleza</p>
           </div>

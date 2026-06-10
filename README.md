@@ -5,7 +5,7 @@ Aplicación Next.js + Supabase para reservas online, agenda y panel de administr
 ## Datos configurados
 
 - Nombre: Gema Estudio de Belleza
-- Email: gemasalonbelleza@gmail.com
+- Email: info@gemaestudiodebelleza.es
 - WhatsApp: 647 067 368
 - Dirección: Calle Velero, 29750 Mezquitilla (Algarrobo Costa), Málaga
 - Estilo: elegante, femenino, tonos beige, rosa empolvado, dorado/cobre y marrón cálido.

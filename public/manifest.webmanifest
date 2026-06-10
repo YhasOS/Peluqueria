@@ -1,0 +1,15 @@
+{
+  "name": "Gema Estudio de Belleza",
+  "short_name": "Gema Belleza",
+  "description": "Reserva tus citas y consulta tu historial en Gema Estudio de Belleza.",
+  "start_url": "/mi-cuenta",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7eee8",
+  "theme_color": "#c9a992",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

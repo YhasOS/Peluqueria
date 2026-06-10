@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 interface Service { id: number; name: string; price: number; priceLabel?: string | null; totalDuration: number; description?: string | null; }
 interface Professional { id: number; name: string; }
@@ -50,7 +51,11 @@ export default function BookingForm() {
       body: JSON.stringify({ serviceId: Number(serviceId), date, startTime: selectedSlot, name: form.name, email: form.email, phone: form.phone, notes: form.notes, professionalId: professionalId ? Number(professionalId) : undefined }),
     });
     const data = await res.json().catch(() => null);
-    if (res.ok) { setBooking(data); setSubmitted(true); }
+    if (res.ok) {
+      if (form.email) localStorage.setItem('gema_customer_email', form.email);
+      if (form.phone) localStorage.setItem('gema_customer_phone', form.phone);
+      setBooking(data); setSubmitted(true);
+    }
     else { setError(data?.error || 'No se ha podido crear la reserva.'); fetchSlots(date); }
   };
 
@@ -82,7 +87,7 @@ export default function BookingForm() {
         <div className="space-y-4">
           <div className="rounded-2xl bg-green-100 p-4 text-green-800">Su cita ha sido reservada correctamente.</div>
           {booking && <div className="rounded-xl bg-primary-light p-4 text-sm"><p><strong>Servicio:</strong> {service.name}</p><p><strong>Fecha y hora:</strong> {new Date(booking.startTime).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}</p><p><strong>Cliente:</strong> {booking.clientName}</p></div>}
-          <div className="flex flex-col gap-3 sm:flex-row"><a href="/services" className="flex-1 rounded-full border border-accent px-4 py-3 text-center font-bold text-accent">Nueva reserva</a><a href={whatsappUrl} target="_blank" rel="noreferrer" className="flex-1 rounded-full bg-accent px-4 py-3 text-center font-bold text-white">Avisar por WhatsApp</a></div>
+          <div className="grid gap-3 sm:grid-cols-3"><a href="/services" className="rounded-full border border-accent px-4 py-3 text-center font-bold text-accent">Nueva reserva</a><Link href="/mi-cuenta" className="rounded-full border border-accent bg-primary-light px-4 py-3 text-center font-bold text-accent-dark">Ver mis citas</Link><a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-full bg-accent px-4 py-3 text-center font-bold text-white">Avisar por WhatsApp</a></div>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
