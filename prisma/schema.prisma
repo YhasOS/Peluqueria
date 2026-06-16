@@ -57,11 +57,17 @@ model ServicePhase {
 
 // Professionals who perform the services. They may have specialisations.
 model Professional {
-  id            Int       @id @default(autoincrement())
-  name          String
-  bio           String?
-  specialties   String[]  @default([]) // Array of category or service slugs
-  bookings      Booking[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String?
+  phone     String?
+  username  String? @unique
+  password  String?
+  role      String  @default("staff")
+  active    Boolean @default(true)
+  color     String?
+
+  bookings  Booking[]
 }
 
 // Resources represent physical assets like chairs, basins or rooms. Some
