@@ -1,6 +1,6 @@
 import type { NextApiRequest } from 'next';
 
-export const STAFF_COOKIE = 'gema_staff_session';
+export const STAFF_COOKIE = 'gema_staff_auth';
 
 export function getStaffFromRequest(req: NextApiRequest): { id: number; username: string; name: string } | null {
   const raw = req.cookies?.[STAFF_COOKIE];
