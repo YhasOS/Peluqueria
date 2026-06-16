@@ -16,14 +16,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const professional = await prisma.professional.findFirst({
-    where: {
-      username: user,
-      password: pass,
-      active: true,
-    },
-  });
+  where: {
+    username: user,
+    password: pass,
+    active: true,
+  },
+});
 
-  const payload = Buffer.from(JSON.stringify({
+if (!professional) {
+  return res.status(401).json({ error: 'Usuario o contraseña incorrectos' });
+}
+
+const payload = Buffer.from(JSON.stringify({
   id: professional.id,
   username: professional.username,
   name: professional.name,
