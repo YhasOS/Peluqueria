@@ -2,12 +2,30 @@ import type { NextApiRequest } from 'next';
 
 export const STAFF_COOKIE = 'gema_staff_auth';
 
-export function getStaffFromRequest(req: NextApiRequest): { id: number; username: string; name: string } | null {
+export type StaffSession = {
+  id: number;
+  username?: string | null;
+  name?: string | null;
+};
+
+export function getStaffFromRequest(req: NextApiRequest): StaffSession | null {
   const raw = req.cookies?.[STAFF_COOKIE];
   if (!raw) return null;
+
+  // Compatibilidad: acepta cookie nueva en base64url y cookie antigua con solo el ID.
+  const directId = Number(raw);
+  if (Number.isFinite(directId) && directId > 0) return { id: directId };
+
   try {
     const data = JSON.parse(Buffer.from(raw, 'base64url').toString('utf8'));
-    if (!data.id) return null;
-    return data;
-  } catch { return null; }
+    const id = Number(data?.id);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    return {
+      id,
+      username: data.username || null,
+      name: data.name || null,
+    };
+  } catch {
+    return null;
+  }
 }
