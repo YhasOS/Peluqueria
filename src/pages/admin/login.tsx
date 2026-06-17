@@ -1,48 +1,44 @@
-import Head from 'next/head';
-import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 
-export default function AdminLoginPage() {
+export default function AdminLogin() {
   const router = useRouter();
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState('');
 
-  async function submit(e: React.FormEvent) {
+  async function submit(e: any) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setMsg('');
     const res = await fetch('/api/admin/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
     });
-    setLoading(false);
-    if (res.ok) router.push('/admin');
-    else setError('Contraseña incorrecta.');
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setMsg(data.error || 'Contraseña incorrecta');
+      return;
+    }
+    router.push('/admin');
   }
 
   return (
-    <main className="min-h-screen bg-primary-light flex items-center justify-center p-4">
-      <Head><title>Acceso administrador</title></Head>
-      <form onSubmit={submit} className="w-full max-w-md rounded-3xl bg-white p-8 shadow-lg">
-        <h1 className="text-3xl font-bold text-accent">Salón Belleza</h1>
-        <p className="mt-2 text-gray-600">Acceso al panel de administración.</p>
-        {error && <div className="mt-5 rounded-xl bg-red-50 p-3 text-red-700">{error}</div>}
-        <label className="mt-6 block text-sm font-semibold">Contraseña</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="mt-2 w-full rounded-xl border border-gray-300 p-3"
-          autoFocus
-          required
-        />
-        <button className="mt-6 w-full rounded-xl bg-accent px-4 py-3 font-semibold text-white hover:bg-accent/90" disabled={loading}>
-          {loading ? 'Entrando...' : 'Entrar'}
-        </button>
-        <p className="mt-4 text-xs text-gray-500">Contraseña inicial: admin123. Cámbiala en el archivo .env con ADMIN_PASSWORD.</p>
-      </form>
+    <main className="min-h-screen bg-[#f8eee8] px-4 py-10">
+      <section className="mx-auto max-w-md rounded-3xl bg-white p-6 shadow">
+        <h1 className="text-3xl font-bold text-[#8a5a42]">Gema Estudio de Belleza</h1>
+        <p className="mt-2 text-gray-500">Acceso administración</p>
+        <form onSubmit={submit} className="mt-6 space-y-4">
+          <input
+            className="w-full rounded-xl border p-3"
+            type="password"
+            placeholder="Contraseña de administración"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button className="w-full rounded-xl bg-[#b9896f] p-3 font-semibold text-white">Entrar</button>
+        </form>
+        {msg && <p className="mt-4 text-red-600">{msg}</p>}
+      </section>
     </main>
   );
 }

@@ -25,17 +25,30 @@ function money(value: any) {
   return `${Number(value || 0).toFixed(2)} €`;
 }
 
+async function postJson(url: string, body: any) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'No se pudo realizar la acción');
+  return data;
+}
+
 export default function StaffPanel() {
   const [from, setFrom] = useState(monthStart());
   const [to, setTo] = useState(today());
   const [bookings, setBookings] = useState<any[]>([]);
-  const [summary, setSummary] = useState<any[]>([]);
+  const [summary, setSummary] = useState<any>(null);
   const [staff, setStaff] = useState<any>(null);
   const [tab, setTab] = useState<'dashboard' | 'agenda' | 'equipo' | 'resumen'>('dashboard');
   const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState('');
 
   async function load() {
     setLoading(true);
+    setMsg('');
     const q = `from=${from}&to=${to}`;
     const resBookings = await fetch('/api/staff/bookings?' + q);
     if (resBookings.status === 401) {
@@ -52,134 +65,180 @@ export default function StaffPanel() {
       return;
     }
     const dataSummary = await resSummary.json();
-    setSummary(Array.isArray(dataSummary) ? dataSummary : []);
+    setSummary(dataSummary || null);
     setLoading(false);
   }
 
   useEffect(() => {
     load();
-  }, [from, to]);
+  }, []);
 
   const mine = useMemo(() => bookings.filter((b) => Number(b.staffId) === Number(staff?.id)), [bookings, staff]);
   const others = useMemo(() => bookings.filter((b) => Number(b.staffId) !== Number(staff?.id)), [bookings, staff]);
-  const mySummary = summary.find((s) => Number(s.id) === Number(staff?.id));
-  const totalEquipo = summary.reduce((acc, s) => acc + Number(s.totalAmount || 0), 0);
 
-  const todayBookings = bookings.filter((b) => String(b.startTime || '').slice(0, 10) === today());
-  const todayMine = todayBookings.filter((b) => Number(b.staffId) === Number(staff?.id));
-  const todayAmount = todayMine.reduce((acc, b) => acc + Number(b.servicePrice || 0), 0);
+  const todayMine = mine.filter((b) => String(b.startTime || '').slice(0, 10) === today());
+  const todayAmount = todayMine
+    .filter((b) => b.status === 'completed')
+    .reduce((acc, b) => acc + Number(b.price || b.servicePrice || 0), 0);
+
+  async function cancelBooking(id: number) {
+    const reason = prompt('Motivo de cancelación (opcional):') || '';
+    if (!confirm('¿Seguro que quieres cancelar esta cita?')) return;
+    await postJson('/api/staff/cancel-booking', { id, reason });
+    setMsg('Cita cancelada correctamente.');
+    await load();
+  }
+
+  async function completeBooking(id: number) {
+    if (!confirm('¿Marcar esta cita como realizada?')) return;
+    await postJson('/api/staff/complete-booking', { id });
+    setMsg('Cita marcada como realizada.');
+    await load();
+  }
+
+  async function rescheduleBooking(id: number) {
+    const value = prompt('Nueva fecha y hora en formato: 2026-06-18 17:30');
+    if (!value) return;
+    const normalized = value.trim().replace(' ', 'T');
+    const d = new Date(normalized);
+    if (Number.isNaN(d.getTime())) {
+      alert('Formato no válido. Usa por ejemplo: 2026-06-18 17:30');
+      return;
+    }
+    await postJson('/api/staff/reschedule-booking', { id, newStartTime: d.toISOString() });
+    setMsg('Cita cambiada correctamente.');
+    await load();
+  }
 
   const nav = [
     ['dashboard', 'Dashboard'],
-    ['agenda', 'Agenda'],
+    ['agenda', 'Mis citas'],
     ['equipo', 'Agenda equipo'],
     ['resumen', 'Resumen económico'],
   ] as const;
 
+  function BookingCard({ b, own }: { b: any; own: boolean }) {
+    return (
+      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="font-bold text-[#3b2b25]">{fmtDate(b.startTime)} · {fmtTime(b.startTime)} - {fmtTime(b.endTime)}</p>
+            <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{b.clientName || 'Cliente'} · {b.serviceName || 'Servicio'}</p>
+            <p className="text-sm text-gray-500">{own ? b.clientPhone : b.staffName}{b.notes ? ` · ${b.notes}` : ''}</p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${b.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-[#f4e4dc] text-[#8a5a42]'}`}>
+            {b.status === 'completed' ? 'realizada' : b.status || 'confirmed'}
+          </span>
+        </div>
+
+        {own && (
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <button onClick={() => rescheduleBooking(b.id)} className="rounded-xl border border-[#d8b7a0] px-3 py-2 text-sm font-semibold text-[#8a5a42]">
+              Cambiar
+            </button>
+            <button onClick={() => cancelBooking(b.id)} className="rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-600">
+              Cancelar
+            </button>
+            <button onClick={() => completeBooking(b.id)} className="rounded-xl bg-[#a66f54] px-3 py-2 text-sm font-semibold text-white">
+              Realizada
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#f8eee8] text-[#3b2b25]">
-      <div className="flex min-h-screen">
-        <aside className="w-64 shrink-0 bg-white/90 p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-[#8a5a42]">Gema Estudio</h1>
-          <p className="mt-1 text-sm text-gray-500">Panel trabajadora</p>
-          <div className="mt-6 rounded-2xl bg-[#f8eee8] p-4">
+      <div className="min-h-screen md:flex">
+        <aside className="bg-white/95 p-4 shadow-sm md:w-64 md:shrink-0 md:p-6">
+          <div className="flex items-center justify-between gap-3 md:block">
+            <div>
+              <h1 className="text-2xl font-bold text-[#8a5a42]">Gema Estudio</h1>
+              <p className="mt-1 text-sm text-gray-500">Panel trabajadora</p>
+            </div>
+            <a href="/" className="rounded-xl bg-[#f8eee8] px-3 py-2 text-sm font-semibold text-[#8a5a42] md:hidden">Web</a>
+          </div>
+
+          <div className="mt-4 rounded-2xl bg-[#f8eee8] p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[#a6755b]">Sesión</p>
             <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{staff?.name || 'Trabajadora'}</p>
           </div>
-          <nav className="mt-8 space-y-2">
+
+          <nav className="mt-4 flex gap-2 overflow-x-auto pb-2 md:mt-8 md:block md:space-y-2 md:overflow-visible">
             {nav.map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
-                className={`block w-full rounded-xl px-4 py-3 text-left font-medium ${tab === key ? 'bg-[#a66f54] text-white' : 'hover:bg-[#f4e4dc]'}`}
+                className={`whitespace-nowrap rounded-xl px-4 py-3 text-left font-medium md:block md:w-full ${tab === key ? 'bg-[#a66f54] text-white' : 'bg-white hover:bg-[#f4e4dc]'}`}
               >
                 {label}
               </button>
             ))}
-            <a href="/" className="block rounded-xl px-4 py-3 font-medium hover:bg-[#f4e4dc]">Ver web</a>
-            <a href="/staff/login" className="block rounded-xl px-4 py-3 font-medium text-red-600 hover:bg-[#f4e4dc]">Salir</a>
+            <a href="/" className="hidden rounded-xl px-4 py-3 font-medium hover:bg-[#f4e4dc] md:block">Ver web</a>
+            <a href="/staff/login" className="rounded-xl px-4 py-3 font-medium text-red-600 hover:bg-[#f4e4dc]">Salir</a>
           </nav>
         </aside>
 
-        <section className="flex-1 p-8">
+        <section className="flex-1 p-4 md:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h2 className="text-4xl font-bold text-[#8a5a42]">Agenda de {staff?.name || ''}</h2>
-              <p className="mt-1 text-gray-600">Citas propias, coordinación con compañeras y resumen económico.</p>
+              <h2 className="text-3xl font-bold text-[#8a5a42] md:text-4xl">Agenda de {staff?.name || ''}</h2>
+              <p className="mt-1 text-sm text-gray-600 md:text-base">Gestiona tus citas, coordina con compañeras y revisa tus servicios realizados.</p>
             </div>
-            <a href="/admin" className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow">Ir a admin</a>
+            <a href="/admin" className="hidden rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow md:inline-block">Ir a admin</a>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-xl border bg-white p-3" />
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded-xl border bg-white p-3" />
             <button onClick={load} className="rounded-xl bg-[#a66f54] px-5 py-3 font-semibold text-white">Actualizar</button>
           </div>
+
+          {msg && <div className="mt-4 rounded-2xl bg-white p-4 text-[#8a5a42] shadow-sm">{msg}</div>}
 
           {loading ? (
             <div className="mt-8 rounded-3xl bg-white p-6 shadow">Cargando agenda...</div>
           ) : (
             <>
               {tab === 'dashboard' && (
-                <div className="mt-8 space-y-8">
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <Card title="Mis citas" value={mine.length} />
-                    <Card title="Citas hoy" value={todayMine.length} />
-                    <Card title="Facturación periodo" value={money(mySummary?.totalAmount)} />
-                    <Card title="Facturación hoy" value={money(todayAmount)} />
-                  </div>
-                  <Panel title="Próximas citas">
-                    <BookingList bookings={mine.slice(0, 8)} showStaff={false} />
-                  </Panel>
+                <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-3xl bg-white p-5 shadow"><p className="text-sm text-gray-500">Mis citas hoy</p><p className="mt-2 text-3xl font-bold text-[#8a5a42]">{todayMine.length}</p></div>
+                  <div className="rounded-3xl bg-white p-5 shadow"><p className="text-sm text-gray-500">Mis citas periodo</p><p className="mt-2 text-3xl font-bold text-[#8a5a42]">{mine.length}</p></div>
+                  <div className="rounded-3xl bg-white p-5 shadow"><p className="text-sm text-gray-500">Realizado hoy</p><p className="mt-2 text-3xl font-bold text-[#8a5a42]">{money(todayAmount)}</p></div>
+                  <div className="rounded-3xl bg-white p-5 shadow"><p className="text-sm text-gray-500">Realizado periodo</p><p className="mt-2 text-3xl font-bold text-[#8a5a42]">{money(summary?.totalAmount)}</p></div>
                 </div>
               )}
 
               {tab === 'agenda' && (
-                <div className="mt-8 grid gap-6 lg:grid-cols-2">
-                  <Panel title="Mis citas">
-                    <BookingList bookings={mine} showStaff={false} />
-                  </Panel>
-                  <Panel title="Citas de compañeras">
-                    <BookingList bookings={others} showStaff />
-                  </Panel>
+                <div className="mt-8">
+                  <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">Mis citas</h3>
+                  <div className="grid gap-4">{mine.length ? mine.map((b) => <BookingCard key={b.id} b={b} own />) : <div className="rounded-3xl bg-white p-6 shadow">No tienes citas en este periodo.</div>}</div>
                 </div>
               )}
 
               {tab === 'equipo' && (
-                <div className="mt-8">
-                  <Panel title="Agenda completa del equipo">
-                    <BookingList bookings={bookings} showStaff />
-                  </Panel>
+                <div className="mt-8 grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">Mis citas</h3>
+                    <div className="grid gap-4">{mine.map((b) => <BookingCard key={b.id} b={b} own />)}</div>
+                  </div>
+                  <div>
+                    <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">Citas de compañeras</h3>
+                    <div className="grid gap-4">{others.map((b) => <BookingCard key={b.id} b={b} own={false} />)}</div>
+                  </div>
                 </div>
               )}
 
               {tab === 'resumen' && (
-                <div className="mt-8">
-                  <Panel title="Resumen económico por trabajadora">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="border-b text-sm text-gray-500">
-                          <th className="py-3">Trabajadora</th>
-                          <th>Citas</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {summary.map((s) => (
-                          <tr key={s.id} className="border-b">
-                            <td className="py-3 font-semibold">{s.name}</td>
-                            <td>{s.totalBookings}</td>
-                            <td>{money(s.totalAmount)}</td>
-                          </tr>
-                        ))}
-                        <tr className="font-bold text-[#8a5a42]">
-                          <td className="py-4">TOTAL EQUIPO</td>
-                          <td>{summary.reduce((acc, s) => acc + Number(s.totalBookings || 0), 0)}</td>
-                          <td>{money(totalEquipo)}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </Panel>
+                <div className="mt-8 rounded-3xl bg-white p-5 shadow">
+                  <h3 className="text-2xl font-bold text-[#8a5a42]">Resumen económico de {staff?.name}</h3>
+                  <p className="mt-1 text-sm text-gray-500">Solo cuenta citas marcadas como realizadas.</p>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-[#f8eee8] p-4"><p className="text-sm text-gray-500">Citas realizadas</p><p className="text-3xl font-bold text-[#8a5a42]">{summary?.totalBookings || 0}</p></div>
+                    <div className="rounded-2xl bg-[#f8eee8] p-4"><p className="text-sm text-gray-500">Importe realizado</p><p className="text-3xl font-bold text-[#8a5a42]">{money(summary?.totalAmount)}</p></div>
+                    <div className="rounded-2xl bg-[#f8eee8] p-4"><p className="text-sm text-gray-500">Periodo</p><p className="text-lg font-semibold text-[#8a5a42]">{from} a {to}</p></div>
+                  </div>
                 </div>
               )}
             </>
@@ -187,46 +246,5 @@ export default function StaffPanel() {
         </section>
       </div>
     </main>
-  );
-}
-
-function Card({ title, value }: { title: string; value: any }) {
-  return (
-    <article className="rounded-3xl bg-white p-5 shadow">
-      <p className="text-sm text-gray-500">{title}</p>
-      <p className="mt-2 text-3xl font-bold text-[#8a5a42]">{value}</p>
-    </article>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: any }) {
-  return (
-    <section className="rounded-3xl bg-white p-6 shadow">
-      <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-function BookingList({ bookings, showStaff }: { bookings: any[]; showStaff: boolean }) {
-  if (!bookings.length) return <p className="text-gray-500">No hay citas en el periodo seleccionado.</p>;
-  return (
-    <div className="space-y-3">
-      {bookings.map((b) => (
-        <article key={b.id} className="rounded-2xl border border-[#ead6cc] bg-[#fffaf7] p-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-bold text-[#3b2b25]">{fmtDate(b.startTime)} · {fmtTime(b.startTime)} - {fmtTime(b.endTime)}</p>
-              <p className="mt-1">{b.clientName || 'Cliente'} · {b.serviceName || 'Servicio'}</p>
-              <p className="text-sm text-gray-500">{b.clientPhone || ''} {b.notes ? `· ${b.notes}` : ''}</p>
-            </div>
-            <div className="text-right">
-              {showStaff && <p className="font-semibold text-[#8a5a42]">{b.staffName || 'Sin asignar'}</p>}
-              <p className="text-sm text-gray-500">{money(b.servicePrice)}</p>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
   );
 }
