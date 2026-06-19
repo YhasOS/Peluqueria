@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         orderBy: { startTime: 'asc' },
         include: {
           service: { select: { name: true, price: true, totalDuration: true } },
-          professional: { select: { id: true, name: true } },
+          professional: { select: { id: true, name: true, phone: true } },
           resource: { select: { name: true } },
         },
       });
@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'POST') {
       const { serviceId, date, startTime, name, email, phone, notes, professionalId, resourceId } = req.body;
-      if (!serviceId || !date || !startTime || !name || !email) {
+      if (!serviceId || !date || !startTime || !name || !email || !professionalId) {
         return res.status(400).json({ error: 'Faltan datos obligatorios' } satisfies ErrorResponse);
       }
 

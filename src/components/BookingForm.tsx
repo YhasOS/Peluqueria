@@ -3,9 +3,16 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 
 interface Service { id: number; name: string; price: number; priceLabel?: string | null; totalDuration: number; description?: string | null; }
-interface Professional { id: number; name: string; }
+interface Professional { id: number; name: string; phone?: string | null; }
 interface SlotOption { value: string; label: string; }
-interface BookingResult { id: number; clientName: string; clientPhone?: string | null; startTime: string; service?: { name: string }; }
+interface BookingResult {
+  id: number;
+  clientName: string;
+  clientPhone?: string | null;
+  startTime: string;
+  service?: { name: string };
+  professional?: { id: number; name: string; phone?: string | null } | null;
+}
 
 export default function BookingForm() {
   const router = useRouter();
@@ -42,10 +49,15 @@ export default function BookingForm() {
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => { const value = e.target.value; setDate(value); fetchSlots(value); };
   const handleProfessionalChange = (e: React.ChangeEvent<HTMLSelectElement>) => { const value = e.target.value; setProfessionalId(value); if (date) fetchSlots(date, value); };
-
+  const selectedProfessional = professionals.find((p) => String(p.id) === professionalId);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('');
     if (!serviceId || !date || !selectedSlot) return;
+	if (!professionalId) {
+  setError('Selecciona una profesional para poder asignar correctamente la cita.');
+  return;
+}
     const res = await fetch('/api/bookings', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ serviceId: Number(serviceId), date, startTime: selectedSlot, name: form.name, email: form.email, phone: form.phone, notes: form.notes, professionalId: professionalId ? Number(professionalId) : undefined }),
@@ -62,8 +74,9 @@ export default function BookingForm() {
   const whatsappUrl = (() => {
     if (!submitted || !booking || !service) return '';
     const when = new Date(booking.startTime).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
-    const text = `Hola, soy ${booking.clientName}. He reservado ${service.name} para el ${when}.`;
-    const phone = businessWhatsapp.replace(/\D/g, '');
+    const professionalName = booking.professional?.name || selectedProfessional?.name || 'la profesional';
+const text = `Hola ${professionalName}, soy ${booking.clientName}. He reservado ${service.name} para el ${when}.`;
+const phone = (booking.professional?.phone || selectedProfessional?.phone || businessWhatsapp).replace(/\D/g, '');
     return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
   })();
 
@@ -93,7 +106,23 @@ export default function BookingForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && <div className="rounded-md bg-red-100 p-3 text-red-700">{error}</div>}
           <div><label className="block text-sm font-medium mb-1">Fecha</label><input type="date" value={date} onChange={handleDateChange} className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary" required /></div>
-          <div><label className="block text-sm font-medium mb-1">Profesional</label><select value={professionalId} onChange={handleProfessionalChange} className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary"><option value="">Cualquiera disponible</option>{professionals.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+          <div>
+  <label className="block text-sm font-medium mb-1">Profesional</label>
+
+  <select
+    value={professionalId}
+    onChange={handleProfessionalChange}
+    required
+    className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary"
+  >
+    <option value="">Selecciona profesional</option>
+    {professionals.map((p) => (
+      <option key={p.id} value={p.id}>
+        {p.name}
+      </option>
+    ))}
+  </select>
+</div>
           {date && <div><label className="block text-sm font-medium mb-1">Hora</label>{loadingSlots ? <p>Cargando disponibilidad...</p> : slots.length === 0 ? <p className="rounded-md bg-yellow-50 p-3 text-sm text-yellow-800">No hay horarios disponibles para ese día.</p> : <select value={selectedSlot} onChange={(e) => setSelectedSlot(e.target.value)} className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary" required><option value="">Seleccione una hora</option>{slots.map((slot) => <option key={slot.value} value={slot.value}>{slot.label}</option>)}</select>}</div>}
           <div><label className="block text-sm font-medium mb-1">Nombre</label><input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary" required /></div>
           <div><label className="block text-sm font-medium mb-1">Email</label><input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-2xl border border-gray-200 bg-white p-3 outline-none transition focus:border-accent focus:ring-2 focus:ring-primary" required /></div>
