@@ -35,7 +35,52 @@ async function postJson(url: string, body: any) {
   if (!res.ok) throw new Error(data.error || 'No se pudo realizar la acción');
   return data;
 }
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
 
+async function activatePushNotifications() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    throw new Error('Este navegador no soporta notificaciones push.');
+  }
+
+  const permission = await Notification.requestPermission();
+
+  if (permission !== 'granted') {
+    throw new Error('No se han concedido permisos de notificación.');
+  }
+
+  const registration = await navigator.serviceWorker.register('/sw.js');
+
+  const keyRes = await fetch('/api/push/public-key');
+  const keyData = await keyRes.json();
+
+  if (!keyData.publicKey) {
+    throw new Error('No está configurada la clave pública de notificaciones.');
+  }
+
+  const subscription = await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(keyData.publicKey),
+  });
+
+  const saveRes = await fetch('/api/staff/push-subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ subscription }),
+  });
+
+  const saveData = await saveRes.json().catch(() => ({}));
+
+  if (!saveRes.ok) {
+    throw new Error(saveData.error || 'No se pudo activar la notificación.');
+  }
+
+  return true;
+}
 export default function StaffPanel() {
   const [from, setFrom] = useState(monthStart());
   const [to, setTo] = useState(today());
@@ -45,6 +90,7 @@ export default function StaffPanel() {
   const [tab, setTab] = useState<'dashboard' | 'agenda' | 'equipo' | 'resumen'>('dashboard');
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState('');
+const [pushLoading, setPushLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -72,6 +118,18 @@ export default function StaffPanel() {
   useEffect(() => {
     load();
   }, []);
+async function handleActivatePush() {
+  try {
+    setPushLoading(true);
+    setMsg('');
+    await activatePushNotifications();
+    setMsg('Notificaciones activadas en este dispositivo.');
+  } catch (error: any) {
+    setMsg(error?.message || 'No se pudieron activar las notificaciones.');
+  } finally {
+    setPushLoading(false);
+  }
+}
 
   const mine = useMemo(() => bookings.filter((b) => Number(b.staffId) === Number(staff?.id)), [bookings, staff]);
   const others = useMemo(() => bookings.filter((b) => Number(b.staffId) !== Number(staff?.id)), [bookings, staff]);
@@ -186,7 +244,19 @@ export default function StaffPanel() {
               <h2 className="text-3xl font-bold text-[#8a5a42] md:text-4xl">Agenda de {staff?.name || ''}</h2>
               <p className="mt-1 text-sm text-gray-600 md:text-base">Gestiona tus citas, coordina con compañeras y revisa tus servicios realizados.</p>
             </div>
-            <a href="/admin" className="hidden rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow md:inline-block">Ir a admin</a>
+            <div className="flex flex-wrap gap-2">
+  <button
+    onClick={handleActivatePush}
+    disabled={pushLoading}
+    className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow disabled:opacity-60"
+  >
+    {pushLoading ? 'Activando...' : 'Activar notificaciones'}
+  </button>
+
+  <a href="/admin" className="hidden rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow md:inline-block">
+    Ir a admin
+  </a>
+</div>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">

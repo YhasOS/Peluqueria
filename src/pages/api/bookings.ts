@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
 import { addMinutes } from 'date-fns';
+import { sendPushToProfessional } from '@/lib/push';
 
 type ErrorResponse = { error: string };
 
@@ -125,7 +126,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
         cursor = blockEnd;
       }
-
+	await sendPushToProfessional(booking.professionalId, {
+  title: 'Nueva cita',
+  body: `${booking.clientName} ha reservado ${booking.service?.name || 'un servicio'} el ${booking.startTime.toLocaleString('es-ES')}.`,
+  url: '/staff',
+});
       return res.status(201).json(booking);
     }
 

@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
+import { sendPushToProfessional } from '@/lib/push';
 
 function cleanEmail(value: any) { return String(value || '').trim().toLowerCase(); }
 function cleanPhone(value: any) { return String(value || '').replace(/\s+/g, '').trim(); }
@@ -61,6 +62,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     newEnd,
     id
   );
-
+await sendPushToProfessional(professionalId, {
+  title: 'Cita cambiada',
+  body: `${booking.clientName || 'Una clienta'} ha cambiado su cita al ${newStart.toLocaleString('es-ES')}.`,
+  url: '/staff',
+});
   return res.status(200).json({ ok: true });
 }

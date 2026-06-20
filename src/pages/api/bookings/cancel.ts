@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import prisma from '@/lib/prisma';
+import { sendPushToProfessional } from '@/lib/push';
 
 function cleanEmail(value: any) { return String(value || '').trim().toLowerCase(); }
 function cleanPhone(value: any) { return String(value || '').replace(/\s+/g, '').trim(); }
@@ -38,6 +39,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     reason,
     id
   );
-
+await sendPushToProfessional(rows[0].professionalId, {
+  title: 'Cita cancelada',
+  body: `${rows[0].clientName || 'Una clienta'} ha cancelado su cita.`,
+  url: '/staff',
+});
   return res.status(200).json({ ok: true });
 }

@@ -18,3 +18,44 @@ self.addEventListener('fetch', (event) => {
     return res;
   }).catch(() => caches.match(req).then((cached) => cached || caches.match('/'))));
 });
+self.addEventListener('push', function (event) {
+  let data = {};
+
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (error) {
+    data = {};
+  }
+
+  const title = data.title || 'Gema Estudio de Belleza';
+  const options = {
+    body: data.body || 'Tienes una nueva notificación.',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    data: {
+      url: data.url || '/staff',
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/staff';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+      for (const client of clientList) {
+        if ('focus' in client && client.url.includes(url)) {
+          return client.focus();
+        }
+      }
+
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    })
+  );
+});
