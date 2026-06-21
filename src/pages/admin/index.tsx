@@ -44,9 +44,14 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-accent">Panel de administración</h1>
           <p className="mt-2 text-gray-600">Resumen rápido de reservas, servicios y profesionales.</p>
         </div>
-        <Link href="/admin/bookings" className="rounded-xl bg-accent px-5 py-3 font-semibold text-white shadow hover:bg-accent/90">
-          Ver agenda
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/bonuses" className="rounded-xl bg-white px-5 py-3 font-semibold text-accent shadow hover:bg-primary-light">
+            Gestionar bonos
+          </Link>
+          <Link href="/admin/bookings" className="rounded-xl bg-accent px-5 py-3 font-semibold text-white shadow hover:bg-accent/90">
+            Ver agenda
+          </Link>
+        </div>
       </div>
 
       {loading || !stats ? (

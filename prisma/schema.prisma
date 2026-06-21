@@ -39,6 +39,7 @@ model Service {
   category          Category       @relation(fields: [categoryId], references: [id])
   phases            ServicePhase[]
   bookings          Booking[]
+  bonusServices     BonusService[]
 }
 
 // Each service can be broken down into phases. A phase with
@@ -100,6 +101,7 @@ model Booking {
   resource      Resource?         @relation(fields: [resourceId], references: [id])
   status        String            @default("confirmed")
   blocks        BookingBlock[]
+  bonusUsages    BonusUsage[]
 }
 
 // Internal blocks representing each phase's occupancy for a booking. These
@@ -124,6 +126,7 @@ model Customer {
   allergies    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  customerBonuses CustomerBonus[]
 }
 
 model Setting {
@@ -132,4 +135,60 @@ model Setting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+model BonusType {
+  id              Int             @id @default(autoincrement())
+  name            String
+  sessions        Int
+  price           Float
+  discountPercent Float?
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  services        BonusService[]
+  customerBonuses CustomerBonus[]
+}
+
+model BonusService {
+  id          Int       @id @default(autoincrement())
+  bonusTypeId Int
+  serviceId   Int
+
+  bonusType   BonusType @relation(fields: [bonusTypeId], references: [id], onDelete: Cascade)
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([bonusTypeId, serviceId])
+}
+
+model CustomerBonus {
+  id                Int          @id @default(autoincrement())
+  customerId        Int
+  bonusTypeId       Int
+  initialSessions   Int
+  remainingSessions Int
+  purchaseDate      DateTime     @default(now())
+  expiryDate        DateTime?
+  active            Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  customer          Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  bonusType         BonusType    @relation(fields: [bonusTypeId], references: [id])
+  usages            BonusUsage[]
+}
+
+model BonusUsage {
+  id               Int            @id @default(autoincrement())
+  customerBonusId  Int
+  bookingId        Int?           @unique
+  serviceId        Int?
+  usedByProfessionalId Int?
+  usedAt           DateTime       @default(now())
+  notes            String?
+
+  customerBonus    CustomerBonus  @relation(fields: [customerBonusId], references: [id], onDelete: Cascade)
+  booking          Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 }
