@@ -2,7 +2,7 @@ name: Keep Gema Studio Alive
 
 on:
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,17 +10,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Home
-        run: curl -fsS https://gemaestudiodebelleza.es/ > /dev/null
+      - name: Home
+        run: curl -I https://gemaestudiodebelleza.es/
 
-      - name: Ping Services
-        run: curl -fsS https://gemaestudiodebelleza.es/api/services > /dev/null
+      - name: Services
+        run: curl -I https://gemaestudiodebelleza.es/api/services
 
-      - name: Ping Settings
-        run: curl -fsS https://gemaestudiodebelleza.es/api/settings > /dev/null
+      - name: Settings
+        run: curl -I https://gemaestudiodebelleza.es/api/settings
 
-      - name: Ping Slots
-        run: curl -fsS https://gemaestudiodebelleza.es/api/slots > /dev/null
-
-      - name: Finished
-        run: echo "OK"
+      - name: Slots
+        run: curl -I https://gemaestudiodebelleza.es/api/slots
