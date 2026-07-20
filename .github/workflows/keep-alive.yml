@@ -1,0 +1,26 @@
+name: Keep Gema Studio Alive
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Home
+        run: curl -fsS https://gemaestudiodebelleza.es/ > /dev/null
+
+      - name: Ping Services
+        run: curl -fsS https://gemaestudiodebelleza.es/api/services > /dev/null
+
+      - name: Ping Settings
+        run: curl -fsS https://gemaestudiodebelleza.es/api/settings > /dev/null
+
+      - name: Ping Slots
+        run: curl -fsS https://gemaestudiodebelleza.es/api/slots > /dev/null
+
+      - name: Finished
+        run: echo "OK"
