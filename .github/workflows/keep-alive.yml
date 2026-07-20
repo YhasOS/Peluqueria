@@ -10,14 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Home
-        run: curl -I https://gemaestudiodebelleza.es/
+      - name: Check database health
+        run: |
+          curl \
+            --fail \
+            --show-error \
+            --silent \
+            --retry 3 \
+            --retry-delay 10 \
+            --max-time 45 \
+            https://gemaestudiodebelleza.es/api/health
 
-      - name: Services
-        run: curl -I https://gemaestudiodebelleza.es/api/services
+      - name: Check public website
+        run: |
+          curl \
+            --fail \
+            --show-error \
+            --silent \
+            --retry 3 \
+            --retry-delay 10 \
+            --max-time 45 \
+            https://gemaestudiodebelleza.es/ > /dev/null
 
-      - name: Settings
-        run: curl -I https://gemaestudiodebelleza.es/api/settings
-
-      - name: Slots
-        run: curl -I https://gemaestudiodebelleza.es/api/slots
+      - name: Monitor completed
+        run: echo "Web y base de datos operativas"
