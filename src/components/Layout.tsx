@@ -116,6 +116,22 @@ export default function Layout({ title, children }: Props) {
             <p className="mt-3">Instala la web como aplicación y consulta tus próximas citas, historial y tratamientos.</p>
             <Link href="/mi-cuenta" className="mt-4 inline-flex rounded-full bg-accent px-5 py-2 font-bold text-white">Mi cuenta</Link>
           </div>
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-[#8a5a42]">
+            Profesionales
+            </h3>
+
+          <p className="mb-3 text-sm text-gray-600">
+            Gestiona tu agenda, crea citas y consulta las reservas.
+          </p>
+
+          <a
+            href="/staff/login"
+            className="mt-5 inline-flex rounded-full bg-accent px-5 py-2 font-bold text-white hover:opacity-90 transition"
+          >
+            Acceder
+          </a>
+        </div>
         </div>
         <div className="mx-auto mt-8 max-w-7xl border-t border-primary px-4 pt-5 text-center text-xs text-gray-500">© {new Date().getFullYear()} {salonName}. Todos los derechos reservados. · Aviso legal · Política de privacidad</div>
       </footer>

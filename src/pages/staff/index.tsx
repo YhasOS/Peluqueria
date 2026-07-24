@@ -256,6 +256,18 @@ async function handleActivatePush() {
   <a href="/admin" className="hidden rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow md:inline-block">
     Ir a admin
   </a>
+  <a
+  href="/staff/new-booking"
+  className="rounded-xl bg-[#a66f54] px-5 py-3 font-semibold text-white shadow"
+>
+  + Nueva cita
+</a>
+<a
+  href="/staff"
+  className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow"
+>
+  📅 Agenda
+</a>
 </div>
           </div>
 

@@ -293,7 +293,7 @@ export default function NewStaffBookingPage() {
               href="/staff"
               className="rounded-xl bg-[#f4e4dc] px-4 py-3 text-center font-semibold text-[#8a5a42]"
             >
-              Volver a agenda
+              Ver agenda
             </Link>
             {whatsappUrl ? (
               <a
