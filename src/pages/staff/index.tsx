@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -22,7 +22,7 @@ function fmtDate(value: string) {
 }
 
 function money(value: any) {
-  return `${Number(value || 0).toFixed(2)} €`;
+  return `${Number(value || 0).toFixed(2)} â‚¬`;
 }
 
 async function postJson(url: string, body: any) {
@@ -32,7 +32,7 @@ async function postJson(url: string, body: any) {
     body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'No se pudo realizar la acción');
+  if (!res.ok) throw new Error(data.error || 'No se pudo realizar la acciÃ³n');
   return data;
 }
 function urlBase64ToUint8Array(base64String: string) {
@@ -50,7 +50,7 @@ async function activatePushNotifications() {
   const permission = await Notification.requestPermission();
 
   if (permission !== 'granted') {
-    throw new Error('No se han concedido permisos de notificación.');
+    throw new Error('No se han concedido permisos de notificaciÃ³n.');
   }
 
   const registration = await navigator.serviceWorker.register('/sw.js');
@@ -59,7 +59,7 @@ async function activatePushNotifications() {
   const keyData = await keyRes.json();
 
   if (!keyData.publicKey) {
-    throw new Error('No está configurada la clave pública de notificaciones.');
+    throw new Error('No estÃ¡ configurada la clave pÃºblica de notificaciones.');
   }
 
   const subscription = await registration.pushManager.subscribe({
@@ -76,7 +76,7 @@ async function activatePushNotifications() {
   const saveData = await saveRes.json().catch(() => ({}));
 
   if (!saveRes.ok) {
-    throw new Error(saveData.error || 'No se pudo activar la notificación.');
+    throw new Error(saveData.error || 'No se pudo activar la notificaciÃ³n.');
   }
 
   return true;
@@ -140,15 +140,15 @@ async function handleActivatePush() {
     .reduce((acc, b) => acc + Number(b.price || b.servicePrice || 0), 0);
 
   async function cancelBooking(id: number) {
-    const reason = prompt('Motivo de cancelación (opcional):') || '';
-    if (!confirm('¿Seguro que quieres cancelar esta cita?')) return;
+    const reason = prompt('Motivo de cancelaciÃ³n (opcional):') || '';
+    if (!confirm('Â¿Seguro que quieres cancelar esta cita?')) return;
     await postJson('/api/staff/cancel-booking', { id, reason });
     setMsg('Cita cancelada correctamente.');
     await load();
   }
 
   async function completeBooking(id: number) {
-    if (!confirm('¿Marcar esta cita como realizada?')) return;
+    if (!confirm('Â¿Marcar esta cita como realizada?')) return;
     await postJson('/api/staff/complete-booking', { id });
     setMsg('Cita marcada como realizada.');
     await load();
@@ -160,7 +160,7 @@ async function handleActivatePush() {
     const normalized = value.trim().replace(' ', 'T');
     const d = new Date(normalized);
     if (Number.isNaN(d.getTime())) {
-      alert('Formato no válido. Usa por ejemplo: 2026-06-18 17:30');
+      alert('Formato no vÃ¡lido. Usa por ejemplo: 2026-06-18 17:30');
       return;
     }
     await postJson('/api/staff/reschedule-booking', { id, newStartTime: d.toISOString() });
@@ -172,7 +172,7 @@ async function handleActivatePush() {
     ['dashboard', 'Dashboard'],
     ['agenda', 'Mis citas'],
     ['equipo', 'Agenda equipo'],
-    ['resumen', 'Resumen económico'],
+    ['resumen', 'Resumen econÃ³mico'],
   ] as const;
 
   function BookingCard({ b, own }: { b: any; own: boolean }) {
@@ -180,9 +180,9 @@ async function handleActivatePush() {
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
-            <p className="font-bold text-[#3b2b25]">{fmtDate(b.startTime)} · {fmtTime(b.startTime)} - {fmtTime(b.endTime)}</p>
-            <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{b.clientName || 'Cliente'} · {b.serviceName || 'Servicio'}</p>
-            <p className="text-sm text-gray-500">{own ? b.clientPhone : b.staffName}{b.notes ? ` · ${b.notes}` : ''}</p>
+            <p className="font-bold text-[#3b2b25]">{fmtDate(b.startTime)} Â· {fmtTime(b.startTime)} - {fmtTime(b.endTime)}</p>
+            <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{b.clientName || 'Cliente'} Â· {b.serviceName || 'Servicio'}</p>
+            <p className="text-sm text-gray-500">{own ? b.clientPhone : b.staffName}{b.notes ? ` Â· ${b.notes}` : ''}</p>
           </div>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${b.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-[#f4e4dc] text-[#8a5a42]'}`}>
             {b.status === 'completed' ? 'realizada' : b.status || 'confirmed'}
@@ -200,6 +200,12 @@ async function handleActivatePush() {
             <button onClick={() => completeBooking(b.id)} className="rounded-xl bg-[#a66f54] px-3 py-2 text-sm font-semibold text-white">
               Realizada
             </button>
+<a
+  href={`/staff/checkout?bookingId=${b.id}`}
+  className="rounded-xl bg-green-600 px-3 py-2 text-center text-sm font-semibold text-white"
+>
+  Cobrar
+</a>
           </div>
         )}
       </div>
@@ -219,7 +225,7 @@ async function handleActivatePush() {
           </div>
 
           <div className="mt-4 rounded-2xl bg-[#f8eee8] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#a6755b]">Sesión</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#a6755b]">SesiÃ³n</p>
             <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{staff?.name || 'Trabajadora'}</p>
           </div>
 
@@ -242,7 +248,7 @@ async function handleActivatePush() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-3xl font-bold text-[#8a5a42] md:text-4xl">Agenda de {staff?.name || ''}</h2>
-              <p className="mt-1 text-sm text-gray-600 md:text-base">Gestiona tus citas, coordina con compañeras y revisa tus servicios realizados.</p>
+              <p className="mt-1 text-sm text-gray-600 md:text-base">Gestiona tus citas, coordina con compaÃ±eras y revisa tus servicios realizados.</p>
             </div>
             <div className="flex flex-wrap gap-2">
   <button
@@ -266,7 +272,7 @@ async function handleActivatePush() {
   href="/staff"
   className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow"
 >
-  📅 Agenda
+  ðŸ“… Agenda
 </a>
 </div>
           </div>
@@ -306,7 +312,7 @@ async function handleActivatePush() {
                     <div className="grid gap-4">{mine.map((b) => <BookingCard key={b.id} b={b} own />)}</div>
                   </div>
                   <div>
-                    <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">Citas de compañeras</h3>
+                    <h3 className="mb-4 text-2xl font-bold text-[#8a5a42]">Citas de compaÃ±eras</h3>
                     <div className="grid gap-4">{others.map((b) => <BookingCard key={b.id} b={b} own={false} />)}</div>
                   </div>
                 </div>
@@ -314,7 +320,7 @@ async function handleActivatePush() {
 
               {tab === 'resumen' && (
                 <div className="mt-8 rounded-3xl bg-white p-5 shadow">
-                  <h3 className="text-2xl font-bold text-[#8a5a42]">Resumen económico de {staff?.name}</h3>
+                  <h3 className="text-2xl font-bold text-[#8a5a42]">Resumen econÃ³mico de {staff?.name}</h3>
                   <p className="mt-1 text-sm text-gray-500">Solo cuenta citas marcadas como realizadas.</p>
                   <div className="mt-5 grid gap-4 sm:grid-cols-3">
                     <div className="rounded-2xl bg-[#f8eee8] p-4"><p className="text-sm text-gray-500">Citas realizadas</p><p className="text-3xl font-bold text-[#8a5a42]">{summary?.totalBookings || 0}</p></div>
@@ -330,3 +336,4 @@ async function handleActivatePush() {
     </main>
   );
 }
+
