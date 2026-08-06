@@ -1,0 +1,328 @@
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+
+type Service = {
+  id: number;
+  name: string;
+  price: number;
+  priceLabel?: string | null;
+  active?: boolean;
+};
+
+type BookingData = {
+  id: number;
+  clientName: string;
+  clientPhone?: string | null;
+  startTime: string;
+  paid?: boolean;
+  service: { id: number; name: string; price: number };
+  professional?: { name: string } | null;
+};
+
+type Item = {
+  key: string;
+  serviceId?: number;
+  name: string;
+  unitPriceCents: number;
+  quantity: number;
+};
+
+const DENOMS = [
+  ['100 €', 10000], ['50 €', 5000], ['20 €', 2000], ['10 €', 1000],
+  ['5 €', 500], ['2 €', 200], ['1 €', 100], ['0,50 €', 50],
+  ['0,20 €', 20], ['0,10 €', 10], ['0,05 €', 5], ['0,02 €', 2], ['0,01 €', 1],
+] as const;
+
+const toCents = (value: string | number) => {
+  const n = Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? Math.round(n * 100) : 0;
+};
+
+const money = (value: number) =>
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value / 100);
+
+const itemKey = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+export default function Checkout() {
+  const router = useRouter();
+  const bookingId = Number(router.query.bookingId || 0);
+
+  const [services, setServices] = useState<Service[]>([]);
+  const [booking, setBooking] = useState<BookingData | null>(null);
+  const [items, setItems] = useState<Item[]>([]);
+  const [search, setSearch] = useState('');
+  const [received, setReceived] = useState(0);
+  const [manual, setManual] = useState('');
+  const [concept, setConcept] = useState('');
+  const [conceptPrice, setConceptPrice] = useState('');
+  const [usage, setUsage] = useState<Record<string, number>>({});
+  const [finalizing, setFinalizing] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/services')
+      .then(r => r.json())
+      .then(data => setServices(Array.isArray(data) ? data.filter((s: Service) => s.active !== false) : []))
+      .catch(() => setError('No se pudieron cargar los servicios.'));
+
+    try {
+      const stored = JSON.parse(localStorage.getItem('gema_checkout_usage') || '{}');
+      if (stored && typeof stored === 'object') setUsage(stored);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!router.isReady || !bookingId) return;
+
+    fetch(`/api/staff/checkout-booking?id=${bookingId}`)
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data?.error || 'No se pudo cargar la cita.');
+        return data;
+      })
+      .then((data: BookingData) => {
+        setBooking(data);
+        setItems([{
+          key: itemKey(),
+          serviceId: data.service.id,
+          name: data.service.name,
+          unitPriceCents: toCents(data.service.price),
+          quantity: 1,
+        }]);
+      })
+      .catch((err: any) => setError(err?.message || 'No se pudo cargar la cita.'));
+  }, [router.isReady, bookingId]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = q ? services.filter(s => s.name.toLowerCase().includes(q)) : [...services];
+    return list.sort((a, b) => {
+      const score = (usage[String(b.id)] || 0) - (usage[String(a.id)] || 0);
+      return score || a.name.localeCompare(b.name);
+    });
+  }, [services, search, usage]);
+
+  const total = items.reduce((sum, item) => sum + item.unitPriceCents * item.quantity, 0);
+  const change = received - total;
+
+  function recordUsage(serviceId?: number) {
+    if (!serviceId) return;
+    setUsage(current => {
+      const next = { ...current, [String(serviceId)]: (current[String(serviceId)] || 0) + 1 };
+      localStorage.setItem('gema_checkout_usage', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function addService(service: Service) {
+    recordUsage(service.id);
+    setItems(current => {
+      const existing = current.find(i => i.serviceId === service.id);
+      if (existing) {
+        return current.map(i => i.serviceId === service.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...current, {
+        key: itemKey(),
+        serviceId: service.id,
+        name: service.name,
+        unitPriceCents: toCents(service.price),
+        quantity: 1,
+      }];
+    });
+  }
+
+  function addConcept() {
+    const price = toCents(conceptPrice);
+    if (!concept.trim() || price <= 0) return;
+    setItems(current => [...current, {
+      key: itemKey(),
+      name: concept.trim(),
+      unitPriceCents: price,
+      quantity: 1,
+    }]);
+    setConcept('');
+    setConceptPrice('');
+  }
+
+  function quantity(key: string, delta: number) {
+    setItems(current => current
+      .map(i => i.key === key ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i)
+      .filter(i => i.quantity > 0)
+    );
+  }
+
+  function reset() {
+    if (items.length && !confirm('¿Empezar una venta nueva?')) return;
+    setBooking(null);
+    setItems([]);
+    setReceived(0);
+    setManual('');
+    setDone(false);
+    router.replace('/staff/checkout', undefined, { shallow: true });
+  }
+
+  async function finishSale() {
+    if (!items.length || total <= 0) return setError('Añade al menos un servicio.');
+    if (received < total) return setError('El importe recibido no cubre el total.');
+
+    setFinalizing(true);
+    setError('');
+
+    try {
+      if (bookingId) {
+        const response = await fetch('/api/staff/finalize-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            bookingId,
+            totalCents: total,
+            receivedCents: received,
+            changeCents: Math.max(change, 0),
+          }),
+        });
+        const data = await response.json().catch(() => null);
+        if (!response.ok) throw new Error(data?.error || 'No se pudo finalizar el cobro.');
+      }
+
+      items.forEach(item => recordUsage(item.serviceId));
+      setDone(true);
+    } catch (err: any) {
+      setError(err?.message || 'No se pudo finalizar el cobro.');
+    } finally {
+      setFinalizing(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <main className="min-h-screen bg-[#f8eee8] p-4 text-[#3b2b25] md:p-8">
+        <div className="mx-auto max-w-xl rounded-3xl bg-white p-8 text-center shadow">
+          <div className="text-6xl">✓</div>
+          <h1 className="mt-3 text-3xl font-extrabold text-green-700">Venta finalizada</h1>
+          <p className="mt-3 text-xl">Total cobrado: <strong>{money(total)}</strong></p>
+          <p className="mt-2 text-3xl font-extrabold text-[#8a5a42]">
+            Cambio: {money(Math.max(change, 0))}
+          </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2">
+            <button onClick={reset} className="rounded-xl bg-[#a66f54] px-5 py-4 font-bold text-white">
+              Nueva venta
+            </button>
+            <Link href="/staff" className="rounded-xl bg-[#f4e4dc] px-5 py-4 font-bold text-[#8a5a42]">
+              Volver a agenda
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-[#f8eee8] p-3 text-[#3b2b25] md:p-6">
+      <div className="mx-auto max-w-7xl">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-extrabold text-[#8a5a42] md:text-4xl">Caja inteligente</h1>
+            <p className="text-gray-600">
+              {booking ? `Cobro de ${booking.clientName}` : 'Suma servicios y calcula el cambio.'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Link href="/staff" className="rounded-xl bg-white px-4 py-3 font-bold text-[#8a5a42] shadow">Agenda</Link>
+            <button onClick={reset} className="rounded-xl bg-[#a66f54] px-4 py-3 font-bold text-white shadow">Nueva venta</button>
+          </div>
+        </header>
+
+        {error && <div className="mt-4 rounded-2xl bg-red-100 p-4 text-red-700">{error}</div>}
+
+        <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
+          <section className="rounded-3xl bg-white p-4 shadow md:p-6">
+            <h2 className="text-xl font-bold text-[#8a5a42]">Servicios</h2>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar servicio..." className="mt-4 w-full rounded-2xl border p-4 text-lg" />
+            <div className="mt-4 grid max-h-[50vh] gap-2 overflow-y-auto sm:grid-cols-2">
+              {filtered.map(service => (
+                <button key={service.id} onClick={() => addService(service)} className="flex min-h-20 items-center justify-between gap-3 rounded-2xl border border-[#ead7cd] bg-[#fffaf7] p-4 text-left active:scale-[.98]">
+                  <span className="font-semibold">{service.name}</span>
+                  <span className="rounded-full bg-white px-3 py-1 font-bold text-[#8a5a42]">{service.priceLabel || money(toCents(service.price))}</span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-5 rounded-2xl bg-[#f8eee8] p-4">
+              <p className="font-bold text-[#8a5a42]">Otro concepto</p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_120px_auto]">
+                <input value={concept} onChange={e => setConcept(e.target.value)} placeholder="Producto o servicio" className="rounded-xl border p-3" />
+                <input value={conceptPrice} onChange={e => setConceptPrice(e.target.value)} placeholder="Precio €" inputMode="decimal" className="rounded-xl border p-3" />
+                <button onClick={addConcept} className="rounded-xl bg-[#a66f54] px-5 py-3 font-bold text-white">Añadir</button>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid gap-5">
+            <section className="rounded-3xl bg-white p-4 shadow md:p-6">
+              <h2 className="text-xl font-bold text-[#8a5a42]">Cuenta</h2>
+              <div className="mt-4 max-h-[35vh] space-y-3 overflow-y-auto">
+                {!items.length ? <div className="rounded-2xl border border-dashed p-6 text-center text-gray-500">Pulsa un servicio para añadirlo.</div> : items.map(item => (
+                  <div key={item.key} className="rounded-2xl border border-[#ead7cd] p-4">
+                    <div className="flex justify-between gap-3">
+                      <div><p className="font-bold">{item.name}</p><p className="text-sm text-gray-500">{money(item.unitPriceCents)} por unidad</p></div>
+                      <button onClick={() => setItems(current => current.filter(i => i.key !== item.key))} className="text-sm font-semibold text-red-600">Quitar</button>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => quantity(item.key, -1)} className="h-10 w-10 rounded-full bg-[#f8eee8] text-xl font-bold">−</button>
+                        <span className="min-w-8 text-center text-lg font-bold">{item.quantity}</span>
+                        <button onClick={() => quantity(item.key, 1)} className="h-10 w-10 rounded-full bg-[#f8eee8] text-xl font-bold">+</button>
+                      </div>
+                      <p className="text-xl font-extrabold text-[#8a5a42]">{money(item.unitPriceCents * item.quantity)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 rounded-2xl bg-[#8a5a42] p-5 text-white">
+                <p className="text-sm uppercase tracking-[.2em] text-white/80">Total</p>
+                <p className="text-5xl font-extrabold">{money(total)}</p>
+              </div>
+            </section>
+
+            <section className="rounded-3xl bg-white p-4 shadow md:p-6">
+              <h2 className="text-xl font-bold text-[#8a5a42]">Efectivo recibido</h2>
+              <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {DENOMS.map(([label, value]) => (
+                  <button key={value} onClick={() => setReceived(current => current + value)} className="min-h-12 rounded-xl border border-[#d8b7a0] bg-[#fffaf7] px-2 py-3 font-bold text-[#8a5a42] active:scale-95">+ {label}</button>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
+                <input value={manual} onChange={e => setManual(e.target.value)} inputMode="decimal" placeholder="Importe entregado" className="rounded-xl border p-3 text-lg" />
+                <button onClick={() => setReceived(toCents(manual))} className="rounded-xl bg-[#f4e4dc] px-4 py-3 font-bold text-[#8a5a42]">Usar importe</button>
+                <button onClick={() => { setReceived(total); setManual((total / 100).toFixed(2).replace('.', ',')); }} className="rounded-xl bg-[#a66f54] px-4 py-3 font-bold text-white">Importe exacto</button>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl bg-[#f8eee8] p-4">
+                  <p className="text-sm text-gray-500">Recibido</p>
+                  <p className="text-3xl font-extrabold text-[#8a5a42]">{money(received)}</p>
+                  <button onClick={() => { setReceived(0); setManual(''); }} className="mt-2 text-sm font-semibold text-red-600">Borrar efectivo</button>
+                </div>
+
+                <div className={`sm:col-span-2 rounded-2xl p-5 ${total === 0 ? 'bg-gray-100' : change >= 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
+                  <p className="text-sm uppercase tracking-[.15em] text-gray-600">{change >= 0 ? 'Cambio a devolver' : 'Falta por entregar'}</p>
+                  <p className={`text-5xl font-extrabold ${change >= 0 ? 'text-green-700' : 'text-yellow-800'}`}>{money(Math.abs(change))}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={finishSale}
+                disabled={finalizing || total <= 0 || received < total}
+                className="mt-4 w-full rounded-2xl bg-green-600 px-5 py-4 text-xl font-extrabold text-white shadow disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {finalizing ? 'Finalizando...' : '✓ Venta finalizada'}
+              </button>
+            </section>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
