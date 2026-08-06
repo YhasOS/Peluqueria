@@ -22,7 +22,10 @@ function fmtDate(value: string) {
 }
 
 function money(value: any) {
-  return `${Number(value || 0).toFixed(2)} â‚¬`;
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(Number(value || 0));
 }
 
 async function postJson(url: string, body: any) {
@@ -172,7 +175,7 @@ async function handleActivatePush() {
     ['dashboard', 'Dashboard'],
     ['agenda', 'Mis citas'],
     ['equipo', 'Agenda equipo'],
-    ['resumen', 'Resumen econÃ³mico'],
+    ['resumen', 'Resumen economico'],
   ] as const;
 
   function BookingCard({ b, own }: { b: any; own: boolean }) {
@@ -225,7 +228,7 @@ async function handleActivatePush() {
           </div>
 
           <div className="mt-4 rounded-2xl bg-[#f8eee8] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#a6755b]">SesiÃ³n</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#a6755b]">Sesion</p>
             <p className="mt-1 text-lg font-semibold text-[#8a5a42]">{staff?.name || 'Trabajadora'}</p>
           </div>
 
