@@ -272,7 +272,7 @@ async function handleActivatePush() {
   href="/staff"
   className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow"
 >
-  ðŸ“… Agenda
+  Agenda
 </a>
 </div>
           </div>
@@ -320,7 +320,7 @@ async function handleActivatePush() {
 
               {tab === 'resumen' && (
                 <div className="mt-8 rounded-3xl bg-white p-5 shadow">
-                  <h3 className="text-2xl font-bold text-[#8a5a42]">Resumen econÃ³mico de {staff?.name}</h3>
+                  <h3 className="text-2xl font-bold text-[#8a5a42]">Resumen economico de {staff?.name}</h3>
                   <p className="mt-1 text-sm text-gray-500">Solo cuenta citas marcadas como realizadas.</p>
                   <div className="mt-5 grid gap-4 sm:grid-cols-3">
                     <div className="rounded-2xl bg-[#f8eee8] p-4"><p className="text-sm text-gray-500">Citas realizadas</p><p className="text-3xl font-bold text-[#8a5a42]">{summary?.totalBookings || 0}</p></div>
