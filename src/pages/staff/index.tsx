@@ -269,6 +269,12 @@ async function handleActivatePush() {
   + Nueva cita
 </a>
 <a
+  href="/staff/checkout"
+  className="rounded-xl bg-[#3b2b25] px-5 py-3 font-semibold text-white shadow"
+>
+  Caja rápida
+</a>
+<a
   href="/staff"
   className="rounded-xl bg-white px-5 py-3 font-semibold text-[#8a5a42] shadow"
 >
