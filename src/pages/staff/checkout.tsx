@@ -480,14 +480,77 @@ export default function Checkout() {
         <div className="mt-5 grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
           <section className="rounded-3xl bg-white p-4 shadow md:p-6">
             <h2 className="text-xl font-bold text-[#8a5a42]">Servicios</h2>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar servicio..." className="mt-4 w-full rounded-2xl border p-4 text-lg" />
-            <div className="mt-4 grid max-h-[50vh] gap-2 overflow-y-auto sm:grid-cols-2">
-              {filtered.map(service => (
-                <button key={service.id} onClick={() => addService(service)} className="flex min-h-20 items-center justify-between gap-3 rounded-2xl border border-[#ead7cd] bg-[#fffaf7] p-4 text-left active:scale-[.98]">
-                  <span className="font-semibold">{service.name}</span>
-                  <span className="rounded-full bg-white px-3 py-1 font-bold text-[#8a5a42]">{service.priceLabel || money(toCents(service.price))}</span>
-                </button>
-              ))}
+
+<input
+  value={search}
+  onChange={e => setSearch(e.target.value)}
+  placeholder="Buscar servicio..."
+  className="mt-4 w-full rounded-2xl border p-4 text-lg"
+/>
+
+{items.length > 0 && (
+  <div className="mt-3 flex items-center justify-between rounded-2xl bg-[#8a5a42] px-4 py-3 text-white shadow-sm">
+    <div>
+      <span className="font-bold">
+        {items.reduce((sum, item) => sum + item.quantity, 0)}
+      </span>
+      <span className="ml-2 text-sm">
+        servicios añadidos
+      </span>
+    </div>
+
+    <div className="text-lg font-bold">
+      {money(total)}
+    </div>
+  </div>
+)}
+
+<div className="mt-4 grid max-h-[50vh] gap-2 overflow-y-auto sm:grid-cols-2">
+              {filtered.map(service => {
+  const selectedItem = items.find(
+    (item) => item.serviceId === service.id
+  );
+
+  const quantitySelected = selectedItem?.quantity || 0;
+
+  return (
+    <button
+      key={service.id}
+      onClick={() => addService(service)}
+      className={`relative flex min-h-20 items-center justify-between gap-3 rounded-2xl border p-4 text-left transition active:scale-[.98] ${
+        quantitySelected > 0
+          ? 'border-[#8a5a42] bg-[#f4e4dc] ring-2 ring-[#d8b7a0]'
+          : 'border-[#ead7cd] bg-[#fffaf7]'
+      }`}
+    >
+      <div className="flex flex-col">
+        <span className="font-semibold">{service.name}</span>
+
+        {quantitySelected > 0 && (
+          <span className="mt-2 w-fit rounded-full bg-[#8a5a42] px-3 py-1 text-xs font-bold text-white">
+            Añadido × {quantitySelected}
+          </span>
+        )}
+      </div>
+
+      <span
+        className={`shrink-0 rounded-full px-3 py-1 font-bold ${
+          quantitySelected > 0
+            ? 'bg-[#8a5a42] text-white'
+            : 'bg-white text-[#8a5a42]'
+        }`}
+      >
+        {service.priceLabel || money(toCents(service.price))}
+      </span>
+
+      {quantitySelected > 0 && (
+        <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
+          ✓
+        </span>
+      )}
+    </button>
+  );
+})}
             </div>
             <div className="mt-5 rounded-2xl bg-[#f8eee8] p-4">
               <p className="font-bold text-[#8a5a42]">Otro concepto</p>
