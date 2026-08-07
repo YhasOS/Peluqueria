@@ -374,15 +374,48 @@ export default function Checkout() {
           </div>
 
           <div className="mt-6">
-            <label className="text-sm font-semibold">Teléfono de la clienta</label>
-            <input
-              value={ticketPhone}
-              onChange={e => setTicketPhone(e.target.value)}
-              inputMode="tel"
-              placeholder="Ej. 647067368"
-              className="mt-1 w-full rounded-xl border p-3"
-            />
-          </div>
+  <label className="text-sm font-semibold">Teléfono de la clienta</label>
+
+  <div className="mt-1 grid gap-2 sm:grid-cols-[1fr_auto]">
+    <input
+      value={ticketPhone}
+      onChange={(e) => setTicketPhone(e.target.value)}
+      inputMode="tel"
+      placeholder="Ej. 647067368"
+      className="w-full rounded-xl border p-3"
+    />
+
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          const nav = navigator as any;
+
+          if (!nav.contacts?.select) {
+            alert('Este móvil o navegador no permite acceder a los contactos.');
+            return;
+          }
+
+          const contacts = await nav.contacts.select(
+            ['name', 'tel'],
+            { multiple: false }
+          );
+
+          const phone = contacts?.[0]?.tel?.[0];
+
+          if (phone) {
+            setTicketPhone(phone);
+          }
+        } catch (error) {
+          console.error('Error seleccionando contacto:', error);
+        }
+      }}
+      className="rounded-xl bg-[#f4e4dc] px-5 py-3 font-bold text-[#8a5a42]"
+    >
+      Buscar contacto
+    </button>
+  </div>
+</div>
 
           {error ? <div className="mt-4 rounded-xl bg-red-100 p-3 text-red-700">{error}</div> : null}
 
