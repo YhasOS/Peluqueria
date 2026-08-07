@@ -49,38 +49,12 @@ export async function getAvailableSlots(
   const settings = await getSettings();
   const weekday = date.getDay();
   const closedDays = (settings.closedDays || '0').split(',').map((d) => Number(d.trim()));
+  if (closedDays.includes(weekday)) return [];
 
   const openingHour = weekday === 6 ? parseHour(settings.saturdayOpeningHour, 9) : parseHour(settings.openingHour, OPENING_HOUR);
   const closingHour = weekday === 6 ? parseHour(settings.saturdayClosingHour, 14) : parseHour(settings.closingHour, CLOSING_HOUR);
   const slotMinutes = Number(settings.slotMinutes || 30) || 30;
 
-  // Para fechas pasadas permitimos registrar citas históricas
-// sin aplicar disponibilidad ni conflictos con otras citas.
-const selectedDay = new Date(date);
-selectedDay.setHours(0, 0, 0, 0);
-
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
-if (selectedDay < today) {
-  const historicalSlots: Date[] = [];
-
-  const start = new Date(date);
-  start.setHours(openingHour, 0, 0, 0);
-
-  const end = new Date(date);
-  end.setHours(closingHour, 0, 0, 0);
-
-  let slot = new Date(start);
-
-  while (slot < end) {
-    historicalSlots.push(new Date(slot));
-    slot = addMinutes(slot, slotMinutes);
-  }
-
-  return historicalSlots;
-}
-if (closedDays.includes(weekday)) return [];
   // Determine day boundaries
   const dayStart = new Date(date);
   dayStart.setHours(openingHour, 0, 0, 0);
