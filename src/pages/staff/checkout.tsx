@@ -62,6 +62,7 @@ export default function Checkout() {
   const [items, setItems] = useState<Item[]>([]);
   const [search, setSearch] = useState('');
   const [received, setReceived] = useState(0);
+  const [cashCounts, setCashCounts] = useState<Record<number, number>>({});
   const [manual, setManual] = useState('');
   const [concept, setConcept] = useState('');
   const [conceptPrice, setConceptPrice] = useState('');
@@ -592,9 +593,36 @@ export default function Checkout() {
             <section className="rounded-3xl bg-white p-4 shadow md:p-6">
               <h2 className="text-xl font-bold text-[#8a5a42]">Efectivo recibido</h2>
               <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {DENOMS.map(([label, value]) => (
-                  <button key={value} onClick={() => setReceived(current => current + value)} className="min-h-12 rounded-xl border border-[#d8b7a0] bg-[#fffaf7] px-2 py-3 font-bold text-[#8a5a42] active:scale-95">+ {label}</button>
-                ))}
+                {DENOMS.map(([label, value]) => {
+  const count = cashCounts[value] || 0;
+
+  return (
+    <button
+      key={value}
+      onClick={() => {
+        setReceived(current => current + value);
+
+        setCashCounts(current => ({
+          ...current,
+          [value]: (current[value] || 0) + 1,
+        }));
+      }}
+      className={`relative min-h-12 rounded-xl border px-2 py-3 font-bold transition active:scale-95 ${
+        count > 0
+          ? 'border-green-600 bg-green-100 text-green-800 ring-2 ring-green-300'
+          : 'border-[#d8b7a0] bg-[#fffaf7] text-[#8a5a42]'
+      }`}
+    >
+      + {label}
+
+      {count > 0 && (
+        <span className="absolute right-1 top-1 rounded-full bg-green-600 px-2 py-0.5 text-xs font-bold text-white">
+          ×{count}
+        </span>
+      )}
+    </button>
+  );
+})}
               </div>
 
               <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto_auto]">
@@ -607,7 +635,16 @@ export default function Checkout() {
                 <div className="rounded-2xl bg-[#f8eee8] p-4">
                   <p className="text-sm text-gray-500">Recibido</p>
                   <p className="text-3xl font-extrabold text-[#8a5a42]">{money(received)}</p>
-                  <button onClick={() => { setReceived(0); setManual(''); }} className="mt-2 text-sm font-semibold text-red-600">Borrar efectivo</button>
+                  <button
+  onClick={() => {
+    setReceived(0);
+    setManual('');
+    setCashCounts({});
+  }}
+  className="mt-2 text-sm font-semibold text-red-600"
+>
+  Borrar efectivo
+</button>
                 </div>
 
                 <div className={`sm:col-span-2 rounded-2xl p-5 ${total === 0 ? 'bg-gray-100' : change >= 0 ? 'bg-green-100' : 'bg-yellow-100'}`}>
