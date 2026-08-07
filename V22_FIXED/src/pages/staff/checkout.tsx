@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import html2canvas from 'html2canvas';
 
 type Service = {
   id: number;
@@ -45,17 +44,9 @@ const money = (value: number) =>
 
 const itemKey = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-function normalizeWhatsappPhone(value: string) {
-  const digits = value.replace(/\D/g, '');
-  if (!digits) return '';
-  if (digits.startsWith('34')) return digits;
-  return digits.length === 9 ? `34${digits}` : digits;
-}
-
 export default function Checkout() {
   const router = useRouter();
   const bookingId = Number(router.query.bookingId || 0);
-  const ticketRef = useRef<HTMLDivElement | null>(null);
 
   const [services, setServices] = useState<Service[]>([]);
   const [booking, setBooking] = useState<BookingData | null>(null);
@@ -70,7 +61,6 @@ export default function Checkout() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
   const [ticketPhone, setTicketPhone] = useState('');
-  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     fetch('/api/services')
@@ -121,6 +111,10 @@ export default function Checkout() {
 
   const ticketText = useMemo(() => {
     const now = new Date();
+    const detail = items.map(item =>
+      `• ${item.name}${item.quantity > 1 ? ` x${item.quantity}` : ''}: ${money(item.unitPriceCents * item.quantity)}`
+    );
+
     return [
       'GEMA ESTUDIO DE BELLEZA',
       'Ticket digital',
@@ -129,7 +123,7 @@ export default function Checkout() {
       booking?.clientName ? `Clienta: ${booking.clientName}` : '',
       booking?.professional?.name ? `Profesional: ${booking.professional.name}` : '',
       '',
-      ...items.map(item => `• ${item.name}${item.quantity > 1 ? ` x${item.quantity}` : ''}: ${money(item.unitPriceCents * item.quantity)}`),
+      ...detail,
       '',
       `TOTAL: ${money(total)}`,
       `Recibido: ${money(received)}`,
@@ -140,9 +134,10 @@ export default function Checkout() {
     ].filter(Boolean).join('\n');
   }, [items, total, received, change, booking]);
 
-  const whatsappTextUrl = useMemo(() => {
-    const phone = normalizeWhatsappPhone(ticketPhone);
-    if (!phone) return '';
+  const whatsappUrl = useMemo(() => {
+    const digits = ticketPhone.replace(/\D/g, '');
+    if (!digits) return '';
+    const phone = digits.startsWith('34') ? digits : digits.length === 9 ? `34${digits}` : digits;
     return `https://wa.me/${phone}?text=${encodeURIComponent(ticketText)}`;
   }, [ticketPhone, ticketText]);
 
@@ -199,52 +194,7 @@ export default function Checkout() {
     setReceived(0);
     setManual('');
     setDone(false);
-    setTicketPhone('');
     router.replace('/staff/checkout', undefined, { shallow: true });
-  }
-
-  async function ticketBlob() {
-    if (!ticketRef.current) throw new Error('No se pudo generar el ticket.');
-    const canvas = await html2canvas(ticketRef.current, {
-      scale: 2,
-      backgroundColor: '#fffaf7',
-      useCORS: true,
-    });
-
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo crear la imagen.')), 'image/png');
-    });
-  }
-
-  async function shareVisualTicket() {
-    try {
-      setSharing(true);
-      const blob = await ticketBlob();
-      const file = new File([blob], `ticket-gema-${Date.now()}.png`, { type: 'image/png' });
-
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: 'Ticket Gema Estudio de Belleza',
-          text: 'Te envío tu ticket digital.',
-          files: [file],
-        });
-        return;
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.name;
-      link.click();
-      URL.revokeObjectURL(url);
-      alert('Ticket descargado. Ya puedes adjuntarlo en WhatsApp.');
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        setError(err?.message || 'No se pudo compartir el ticket.');
-      }
-    } finally {
-      setSharing(false);
-    }
   }
 
   async function finishSale() {
@@ -280,100 +230,22 @@ export default function Checkout() {
   }
 
   if (done) {
-    const now = new Date();
-
     return (
       <main className="min-h-screen bg-[#f8eee8] p-4 text-[#3b2b25] md:p-8">
-        <div className="mx-auto max-w-2xl rounded-[32px] bg-white p-5 shadow-xl md:p-8">
+        <div className="mx-auto max-w-2xl rounded-3xl bg-white p-6 shadow md:p-8">
           <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#d7aa8e] text-4xl text-[#8a5a42]">✓</div>
-            <h1 className="mt-4 text-4xl font-extrabold text-green-800">¡Venta finalizada!</h1>
+            <div className="text-6xl">✓</div>
+            <h1 className="mt-3 text-3xl font-extrabold text-green-700">Venta finalizada</h1>
             <p className="mt-3 text-xl">Total cobrado: <strong>{money(total)}</strong></p>
-            <div className="mx-auto mt-3 inline-flex rounded-2xl bg-[#f4e4dc] px-6 py-3 text-3xl font-extrabold text-[#8a5a42]">
-              Cambio: {money(Math.max(change, 0))}
-            </div>
+            <p className="mt-2 text-3xl font-extrabold text-[#8a5a42]">Cambio: {money(Math.max(change, 0))}</p>
           </div>
 
-          <div
-            ref={ticketRef}
-            className="relative mx-auto mt-7 overflow-hidden rounded-3xl border border-[#ead7cd] bg-[#fffaf7] p-6 shadow-lg"
-          >
-            <div className="pointer-events-none absolute -left-8 top-10 h-32 w-32 rounded-full bg-[#f4e4dc]/60 blur-2xl" />
-            <div className="pointer-events-none absolute -right-8 bottom-10 h-32 w-32 rounded-full bg-[#ead7cd]/60 blur-2xl" />
-
-            <div className="relative">
-              <div className="text-center">
-                <p className="text-5xl font-serif tracking-[0.18em] text-[#6f4533]">GEMA</p>
-                <p className="mt-1 text-sm font-semibold tracking-[0.28em] text-[#8a5a42]">ESTUDIO DE BELLEZA</p>
-                <div className="mx-auto mt-4 h-px w-40 bg-[#d8b7a0]" />
-                <p className="mt-3 text-sm font-bold tracking-[0.2em] text-[#8a5a42]">TICKET DIGITAL</p>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-white/80 p-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Fecha</p>
-                  <p className="font-semibold">{now.toLocaleDateString('es-ES')}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Hora</p>
-                  <p className="font-semibold">{now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-                {booking?.clientName ? (
-                  <div>
-                    <p className="text-gray-500">Clienta</p>
-                    <p className="font-semibold">{booking.clientName}</p>
-                  </div>
-                ) : null}
-                {booking?.professional?.name ? (
-                  <div>
-                    <p className="text-gray-500">Profesional</p>
-                    <p className="font-semibold">{booking.professional.name}</p>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="mt-6">
-                <div className="rounded-xl bg-[#f4e4dc] px-4 py-2 text-sm font-bold tracking-[0.12em] text-[#8a5a42]">
-                  DETALLE DE SERVICIOS
-                </div>
-
-                <div className="mt-3 space-y-3">
-                  {items.map(item => (
-                    <div key={item.key} className="flex items-end justify-between gap-4 border-b border-dashed border-[#d8b7a0] pb-2">
-                      <div>
-                        <p className="font-semibold">{item.name}</p>
-                        {item.quantity > 1 ? <p className="text-xs text-gray-500">Cantidad: {item.quantity}</p> : null}
-                      </div>
-                      <p className="shrink-0 font-bold">{money(item.unitPriceCents * item.quantity)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-2 rounded-2xl bg-white/90 p-4">
-                <div className="flex justify-between text-lg">
-                  <span>Total</span>
-                  <strong>{money(total)}</strong>
-                </div>
-                <div className="flex justify-between text-lg">
-                  <span>Recibido</span>
-                  <strong>{money(received)}</strong>
-                </div>
-                <div className="flex justify-between rounded-xl bg-green-100 px-3 py-2 text-xl text-green-800">
-                  <span>Cambio</span>
-                  <strong>{money(Math.max(change, 0))}</strong>
-                </div>
-              </div>
-
-              <div className="mt-7 text-center">
-                <p className="text-lg italic text-[#8a5a42]">Gracias por confiar en</p>
-                <p className="text-xl font-semibold text-[#6f4533]">Gema Estudio de Belleza</p>
-                <p className="mt-4 text-sm text-gray-600">gemaestudiodebelleza.es</p>
-              </div>
-            </div>
+          <div className="mt-6 rounded-2xl bg-[#f8eee8] p-5">
+            <h2 className="text-xl font-bold text-[#8a5a42]">Ticket digital</h2>
+            <pre className="mt-3 whitespace-pre-wrap font-sans text-sm leading-6">{ticketText}</pre>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5">
             <label className="text-sm font-semibold">Teléfono de la clienta</label>
             <input
               value={ticketPhone}
@@ -384,34 +256,32 @@ export default function Checkout() {
             />
           </div>
 
-          {error ? <div className="mt-4 rounded-xl bg-red-100 p-3 text-red-700">{error}</div> : null}
-
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <button
-              onClick={shareVisualTicket}
-              disabled={sharing}
-              className="rounded-xl bg-green-500 px-5 py-4 font-bold text-white disabled:opacity-60"
-            >
-              {sharing ? 'Generando ticket...' : 'Enviar ticket visual por WhatsApp'}
-            </button>
-
-            {whatsappTextUrl ? (
-              <a
-                href={whatsappTextUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl bg-[#3b2b25] px-5 py-4 text-center font-bold text-white"
-              >
-                Enviar también como texto
+            {whatsappUrl ? (
+              <a href={whatsappUrl} target="_blank" rel="noreferrer" className="rounded-xl bg-green-500 px-5 py-4 text-center font-bold text-white">
+                Enviar ticket por WhatsApp
               </a>
             ) : (
-              <button
-                onClick={() => alert('Introduce el teléfono de la clienta.')}
-                className="rounded-xl bg-[#3b2b25] px-5 py-4 font-bold text-white"
-              >
-                Enviar también como texto
+              <button onClick={() => alert('Introduce el teléfono de la clienta.')} className="rounded-xl bg-green-200 px-5 py-4 font-bold text-green-800">
+                Enviar ticket por WhatsApp
               </button>
             )}
+
+            <button
+              onClick={async () => {
+                if (navigator.share) {
+                  try {
+                    await navigator.share({ title: 'Ticket Gema Estudio de Belleza', text: ticketText });
+                    return;
+                  } catch {}
+                }
+                await navigator.clipboard.writeText(ticketText);
+                alert('Ticket copiado. Ya puedes pegarlo en WhatsApp.');
+              }}
+              className="rounded-xl bg-[#3b2b25] px-5 py-4 font-bold text-white"
+            >
+              Compartir o copiar ticket
+            </button>
 
             <button onClick={reset} className="rounded-xl bg-[#a66f54] px-5 py-4 font-bold text-white">
               Nueva venta
