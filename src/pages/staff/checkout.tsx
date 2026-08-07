@@ -584,13 +584,32 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
-              <div className="mt-5 rounded-2xl bg-[#8a5a42] p-5 text-white">
-                <p className="text-sm uppercase tracking-[.2em] text-white/80">Total</p>
-                <p className="text-5xl font-extrabold">{money(total)}</p>
-              </div>
+              <button
+  type="button"
+  onClick={() =>
+    document
+      .getElementById('efectivo')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+  className="mt-5 w-full rounded-2xl bg-[#8a5a42] p-5 text-left text-white shadow transition active:scale-[0.99]"
+>
+  <div className="flex items-center justify-between">
+    <div>
+      <p className="text-sm uppercase tracking-[.2em] text-white/80">
+        Total
+      </p>
+      <p className="text-5xl font-extrabold">{money(total)}</p>
+    </div>
+
+    <div className="text-right">
+      <p className="font-bold">Cobrar</p>
+      <p className="text-sm text-white/80">Ir a efectivo ↓</p>
+    </div>
+  </div>
+</button>
             </section>
 
-            <section className="rounded-3xl bg-white p-4 shadow md:p-6">
+            <section id="efectivo" className="rounded-3xl bg-white p-4 shadow md:p-6">
               <h2 className="text-xl font-bold text-[#8a5a42]">Efectivo recibido</h2>
               <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5">
                 {DENOMS.map(([label, value]) => {
