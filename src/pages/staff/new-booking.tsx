@@ -452,13 +452,12 @@ export default function NewStaffBookingPage() {
               <label>
                 <span className="text-sm font-semibold">Fecha</span>
                 <input
-                  type="date"
-                  min={today()}
-                  value={date}
-                  onChange={(event) => setDate(event.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border p-3"
-                />
+  type="date"
+  value={date}
+  onChange={(event) => setDate(event.target.value)}
+  required
+  className="mt-1 w-full rounded-xl border bg-white p-3"
+/>
               </label>
 
               <label>
