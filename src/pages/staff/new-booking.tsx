@@ -130,6 +130,32 @@ export default function NewStaffBookingPage() {
       try {
         setLoadingSlots(true);
         setError('');
+        // Si es una fecha pasada, permitir registrar cualquier hora
+const selectedDate = new Date(`${date}T00:00:00`);
+const todayDate = new Date();
+todayDate.setHours(0, 0, 0, 0);
+
+if (selectedDate < todayDate) {
+  const historicalSlots: { value: string; label: string }[] = [];
+
+  for (let hour = 9; hour < 19; hour++) {
+    for (const minute of [0, 30]) {
+      const slotDate = new Date(`${date}T00:00:00`);
+      slotDate.setHours(hour, minute, 0, 0);
+
+      historicalSlots.push({
+        value: slotDate.toISOString(),
+        label: slotDate.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      });
+    }
+  }
+
+  setSlots(historicalSlots);
+  return;
+}
         const query = new URLSearchParams({
           serviceId,
           professionalId,
